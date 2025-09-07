@@ -35,6 +35,7 @@ else
                     <RadzenBadge Text="Inactive" Style="margin-right: 0.5rem; background:#b00020;color:#fff;" />
                 }
                 <RadzenButton Text="Edit Person" Icon="edit" ButtonStyle="ButtonStyle.Light" Style="margin-right: 0.5rem;" Click="@OpenEditPersonDialog" />
+                <RadzenButton Text="Add Alias" Icon="person_add" ButtonStyle="ButtonStyle.Light" Style="margin-right: 0.5rem;" Click="@OpenAddAliasDialog" />
                 <RadzenButton Text="Back to People" Icon="arrow_back" ButtonStyle="ButtonStyle.Light" Click='@(() => Nav.NavigateTo("/people"))' />
             </div>
         </div>
@@ -42,6 +43,25 @@ else
             <div><strong>Email:</strong> @(!string.IsNullOrWhiteSpace(details.Email) ? details.Email : "—")</div>
             <div><strong>Phone:</strong> @(!string.IsNullOrWhiteSpace(details.Phone) ? details.Phone : "—")</div>
             <div><strong>Notes:</strong> @(!string.IsNullOrWhiteSpace(details.Notes) ? details.Notes : "—")</div>
+            <div>
+                <strong>Aliases:</strong>
+                @if (details.Aliases != null && details.Aliases.Count > 0)
+                {
+                    <span style="display:inline-flex; gap:.35rem; flex-wrap:wrap; align-items:center;">
+                        @foreach (var a in details.Aliases)
+                        {
+                            <RadzenBadge Style="background:#e0e0e0;color:#000; padding:0 .5rem; border-radius:12px; display:inline-flex; align-items:center; gap:.35rem;">
+                                <span>@a.Alias (@DisplayAliasType(a.Type))</span>
+                                <RadzenIcon Icon="close" Style="cursor:pointer; font-size:16px;" @onclick="(() => OnDeleteAlias(a.Id, a.Alias))" />
+                            </RadzenBadge>
+                        }
+                    </span>
+                }
+                else
+                {
+                    <span>—</span>
+                }
+            </div>
             <div class="mt-1">
                 <RadzenBadge Style="margin-right:.5rem;" Text="@($"Paid (YTD): {details.CurrentYearPaid:C}")" />
                 <RadzenBadge Style="background:#b00020;color:#fff;" Text="@($"Owed (YTD): {details.CurrentYearOwed:C}")" />
@@ -422,6 +442,69 @@ else
         if (result is bool ok && ok)
         {
             await RefreshAsync();
+        }
+    }
+
+    private async Task OpenAddAliasDialog()
+    {
+        var result = await Dialogs.OpenAsync<OglesbyFDMembers.App.Components.People.AddAliasDialog>(
+            "Add Alias",
+            new Dictionary<string, object?>
+            {
+                ["PersonId"] = id
+            },
+            new DialogOptions
+            {
+                CloseDialogOnOverlayClick = true,
+                ShowClose = true,
+                Resizable = false,
+                Draggable = false,
+                Style = "width: 520px; max-width: 95vw;"
+            });
+
+        if (result is bool ok && ok)
+        {
+            await RefreshAsync();
+        }
+    }
+
+    private static string DisplayAliasType(OglesbyFDMembers.Domain.Entities.PersonAliasType t)
+    {
+        return t switch
+        {
+            OglesbyFDMembers.Domain.Entities.PersonAliasType.FamilyMember => "Family",
+            OglesbyFDMembers.Domain.Entities.PersonAliasType.VVEC => "VVEC",
+            _ => "Other"
+        };
+    }
+
+    private async Task OnDeleteAlias(int aliasId, string aliasText)
+    {
+        try
+        {
+            var confirm = await Dialogs.Confirm($"Delete alias '{aliasText}'?", "Delete Alias", new ConfirmOptions { OkButtonText = "Delete", CancelButtonText = "Cancel" });
+            if (confirm == true)
+            {
+                await PeopleSvc.DeleteAliasAsync(id, aliasId);
+                Notifications.Notify(new NotificationMessage
+                {
+                    Severity = NotificationSeverity.Success,
+                    Summary = "Deleted",
+                    Detail = "Alias removed.",
+                    Duration = 3000
+                });
+                await RefreshAsync();
+            }
+        }
+        catch (Exception ex)
+        {
+            Notifications.Notify(new NotificationMessage
+            {
+                Severity = NotificationSeverity.Error,
+                Summary = "Failed to delete alias",
+                Detail = ex.Message,
+                Duration = 5000
+            });
         }
     }
 }

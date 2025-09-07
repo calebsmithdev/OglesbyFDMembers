@@ -409,6 +409,44 @@ public class PeopleService
         return entity.Id;
     }
 
+    public async Task<int> AddAliasAsync(int personId, string alias, PersonAliasType type, CancellationToken ct = default)
+    {
+        var personExists = await _db.People.AnyAsync(p => p.Id == personId, ct);
+        if (!personExists) throw new ValidationException("Person not found.");
+
+        var a = (alias ?? string.Empty).Trim();
+        if (string.IsNullOrWhiteSpace(a)) throw new ValidationException("Alias is required.");
+
+        var dup = await _db.PersonAliases
+            .AnyAsync(x => x.PersonId == personId && x.Alias.ToLower() == a.ToLower(), ct);
+        if (dup) throw new ValidationException("Alias already exists for this person.");
+
+        var row = new PersonAlias
+        {
+            PersonId = personId,
+            Alias = a,
+            Type = type,
+            CreatedUtc = DateTime.UtcNow
+        };
+
+        _db.PersonAliases.Add(row);
+        await _db.SaveChangesAsync(ct);
+        return row.Id;
+    }
+
+    public async Task DeleteAliasAsync(int personId, int aliasId, CancellationToken ct = default)
+    {
+        var alias = await _db.PersonAliases.FirstOrDefaultAsync(a => a.Id == aliasId && a.PersonId == personId, ct);
+        if (alias == null)
+        {
+            // Idempotent: already deleted or not found for this person
+            return;
+        }
+
+        _db.PersonAliases.Remove(alias);
+        await _db.SaveChangesAsync(ct);
+    }
+
     public async Task<List<int>> GetAvailableYearsAsync(CancellationToken ct = default)
     {
         var existing = await _db.Assessments
@@ -663,6 +701,17 @@ public class PeopleService
             })
             .ToListAsync(ct);
 
+        var aliases = await _db.PersonAliases.AsNoTracking()
+            .Where(x => x.PersonId == personId)
+            .OrderBy(x => x.Alias)
+            .Select(x => new PersonAliasItem
+            {
+                Id = x.Id,
+                Alias = x.Alias,
+                Type = x.Type
+            })
+            .ToListAsync(ct);
+
         var today = DateTime.UtcNow.Date;
         var properties = await (from o in _db.Ownerships.AsNoTracking()
                                 join pr in _db.Properties.AsNoTracking() on o.PropertyId equals pr.Id
@@ -725,6 +774,7 @@ public class PeopleService
             Active = person.Active,
             CreatedUtc = person.CreatedUtc,
             Addresses = addresses,
+            Aliases = aliases,
             Properties = properties,
             CurrentYearPaid = currentPaid,
             CurrentYearOwed = currentOwed
@@ -796,12 +846,20 @@ public class PersonDetails
     public bool Active { get; set; }
     public DateTime CreatedUtc { get; set; }
     public List<MailingAddress> Addresses { get; set; } = new();
+    public List<PersonAliasItem> Aliases { get; set; } = new();
     public List<OwnedProperty> Properties { get; set; } = new();
     public string FullName => (FirstName + " " + LastName).Trim();
 
     // Current-year summary
     public decimal CurrentYearPaid { get; set; }
     public decimal CurrentYearOwed { get; set; }
+}
+
+public class PersonAliasItem
+{
+    public int Id { get; set; }
+    public string Alias { get; set; } = string.Empty;
+    public PersonAliasType Type { get; set; }
 }
 
 public class UpdatePersonRequest

@@ -13,6 +13,7 @@ public class PersonAliasConfig : IEntityTypeConfiguration<PersonAlias>
         builder.HasKey(a => a.Id);
 
         builder.Property(a => a.Alias).HasMaxLength(200).IsRequired();
+        builder.Property(a => a.Type).IsRequired();
 
         builder.HasOne(a => a.Person)
             .WithMany(p => p.Aliases)
@@ -20,4 +21,3 @@ public class PersonAliasConfig : IEntityTypeConfiguration<PersonAlias>
             .OnDelete(DeleteBehavior.Restrict);
     }
 }
-

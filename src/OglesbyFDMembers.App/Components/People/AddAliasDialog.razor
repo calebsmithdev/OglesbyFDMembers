@@ -1,0 +1,82 @@
+@using System.ComponentModel.DataAnnotations
+@using OglesbyFDMembers.Domain.Entities
+@inject Radzen.DialogService Dialogs
+@inject Radzen.NotificationService Notifications
+@inject OglesbyFDMembers.App.Services.PeopleService People
+
+<div style="padding: 1rem;">
+    <h4 style="margin-top:0;">Add Alias</h4>
+
+    <RadzenTemplateForm TItem="AddAliasModel" Data="model" Submit="HandleSubmit">
+        <div class="row g-2">
+            <div class="col-12">
+                <RadzenTextBox @bind-Value="model.Alias" Name="Alias" Placeholder="Alias (e.g., First Last)" Style="width:100%" />
+                <RadzenRequiredValidator Component="Alias" Text="Alias is required" />
+            </div>
+            <div class="col-12">
+                <RadzenDropDown @bind-Value="model.Type" Name="AliasType" Data="typeOptions" Style="width:100%"
+                                TValue="PersonAliasType" Placeholder="Select type"
+                                TextProperty="Text" ValueProperty="Value" />
+                <RadzenRequiredValidator Component="AliasType" Text="Type is required" />
+            </div>
+        </div>
+
+        <div class="d-flex justify-content-end" style="margin-top: 1rem; gap: .5rem;">
+            <RadzenButton Text="Cancel" ButtonStyle="ButtonStyle.Light" Click="@(() => Dialogs.Close(false))" />
+            <RadzenButton Text="Save" Icon="save" ButtonStyle="ButtonStyle.Primary" Type="ButtonType.Submit" />
+        </div>
+    </RadzenTemplateForm>
+</div>
+
+@code {
+    [Parameter]
+    public int PersonId { get; set; }
+
+    private AddAliasModel model = new();
+    private readonly List<AliasTypeOption> typeOptions = new()
+    {
+        new AliasTypeOption { Text = "Family", Value = PersonAliasType.FamilyMember },
+        new AliasTypeOption { Text = "VVEC", Value = PersonAliasType.VVEC },
+        new AliasTypeOption { Text = "Other", Value = PersonAliasType.Other }
+    };
+
+    private async Task HandleSubmit(AddAliasModel _)
+    {
+        try
+        {
+            await People.AddAliasAsync(PersonId, model.Alias, model.Type);
+            Notifications.Notify(new NotificationMessage
+            {
+                Severity = NotificationSeverity.Success,
+                Summary = "Alias added",
+                Detail = "Alias has been added to the person.",
+                Duration = 3000
+            });
+            Dialogs.Close(true);
+        }
+        catch (Exception ex)
+        {
+            Notifications.Notify(new NotificationMessage
+            {
+                Severity = NotificationSeverity.Error,
+                Summary = "Failed to add alias",
+                Detail = ex.Message,
+                Duration = 5000
+            });
+        }
+    }
+
+    private class AddAliasModel
+    {
+        [Required, MaxLength(200)]
+        public string Alias { get; set; } = string.Empty;
+        [Required]
+        public PersonAliasType Type { get; set; } = PersonAliasType.FamilyMember;
+    }
+
+    private class AliasTypeOption
+    {
+        public string Text { get; set; } = string.Empty;
+        public PersonAliasType Value { get; set; }
+    }
+}

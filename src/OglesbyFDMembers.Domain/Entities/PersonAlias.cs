@@ -20,8 +20,18 @@ public class PersonAlias
     [MaxLength(200)]
     public string Alias { get; set; } = string.Empty;
 
+    [Required]
+    public PersonAliasType Type { get; set; }
+
     public DateTime CreatedUtc { get; set; }
 
     // Navigation
     public Person? Person { get; set; }
+}
+
+public enum PersonAliasType
+{
+    FamilyMember = 0,
+    VVEC = 1,
+    Other = 2
 }
