@@ -1,4 +1,5 @@
 using System.IO;
+using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -19,6 +20,31 @@ public static class SqliteOptions
             conn = $"Data Source={dbFile}";
         }
 
+        // Normalize and ensure directory exists for the sqlite file
+        try
+        {
+            var csb = new SqliteConnectionStringBuilder(conn);
+            var dataSource = csb.DataSource;
+
+            // If relative, resolve to content root
+            if (!Path.IsPathRooted(dataSource))
+            {
+                dataSource = Path.Combine(env.ContentRootPath, dataSource);
+                csb.DataSource = dataSource;
+                conn = csb.ToString();
+            }
+
+            var dir = Path.GetDirectoryName(dataSource);
+            if (!string.IsNullOrEmpty(dir) && !Directory.Exists(dir))
+            {
+                Directory.CreateDirectory(dir);
+            }
+        }
+        catch
+        {
+            // If connection string isn't standard (e.g., contains Mode, Cache, etc.), ignore path normalization.
+        }
+
         services.AddDbContext<AppDbContext>(options =>
         {
             options.UseSqlite(conn, sqlite =>
@@ -36,4 +62,3 @@ public static class SqliteOptions
         return services;
     }
 }
-

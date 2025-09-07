@@ -3,7 +3,8 @@ obj/
 /packages/
 riderModule.iml
 /_ReSharper.Caches/
+.DS_Store
 
 # User-specific files
-dev-oglesbyfdmembers.db
+dev-oglesbyfdmembers.*
 appsettings.Development.json
