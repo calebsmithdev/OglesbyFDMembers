@@ -72,11 +72,9 @@
     protected override async Task OnInitializedAsync()
     {
         years = await PeopleSvc.GetAvailableYearsAsync();
-        year = years.FirstOrDefault();
-        if (year == 0)
-        {
-            year = DateTime.UtcNow.Year;
-        }
+        var currentYear = DateTime.UtcNow.Year;
+        year = years.Contains(currentYear) ? currentYear : years.FirstOrDefault();
+        if (year == 0) year = currentYear;
         await LoadAsync();
     }
 

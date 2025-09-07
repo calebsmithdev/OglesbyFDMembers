@@ -34,12 +34,14 @@ else
                 {
                     <RadzenBadge Text="Inactive" Style="margin-right: 0.5rem; background:#b00020;color:#fff;" />
                 }
+                <RadzenButton Text="Edit Person" Icon="edit" ButtonStyle="ButtonStyle.Light" Style="margin-right: 0.5rem;" Click="@OpenEditPersonDialog" />
                 <RadzenButton Text="Back to People" Icon="arrow_back" ButtonStyle="ButtonStyle.Light" Click='@(() => Nav.NavigateTo("/people"))' />
             </div>
         </div>
         <div class="mt-2">
             <div><strong>Email:</strong> @(!string.IsNullOrWhiteSpace(details.Email) ? details.Email : "—")</div>
             <div><strong>Phone:</strong> @(!string.IsNullOrWhiteSpace(details.Phone) ? details.Phone : "—")</div>
+            <div><strong>Notes:</strong> @(!string.IsNullOrWhiteSpace(details.Notes) ? details.Notes : "—")</div>
             <div class="mt-1">
                 <RadzenBadge Style="margin-right:.5rem;" Text="@($"Paid (YTD): {details.CurrentYearPaid:C}")" />
                 <RadzenBadge Style="background:#b00020;color:#fff;" Text="@($"Owed (YTD): {details.CurrentYearOwed:C}")" />
@@ -345,6 +347,29 @@ else
                 Resizable = false,
                 Draggable = false,
                 Style = "width: 520px; max-width: 95vw;"
+            });
+
+        if (result is bool ok && ok)
+        {
+            await RefreshAsync();
+        }
+    }
+
+    private async Task OpenEditPersonDialog()
+    {
+        var result = await Dialogs.OpenAsync<OglesbyFDMembers.App.Components.People.EditPersonDialog>(
+            "Edit Person",
+            new Dictionary<string, object?>
+            {
+                ["PersonId"] = id
+            },
+            new DialogOptions
+            {
+                CloseDialogOnOverlayClick = true,
+                ShowClose = true,
+                Resizable = false,
+                Draggable = false,
+                Style = "width: 560px; max-width: 95vw;"
             });
 
         if (result is bool ok && ok)

@@ -1,0 +1,128 @@
+@using System.ComponentModel.DataAnnotations
+@using OglesbyFDMembers.App.Services
+@inject Radzen.DialogService Dialogs
+@inject Radzen.NotificationService Notifications
+@inject OglesbyFDMembers.App.Services.PeopleService People
+
+<div style="padding: 1rem;">
+    <h4 style="margin-top:0;">Edit Person</h4>
+
+    <RadzenTemplateForm TItem="EditPersonModel" Data="model" Submit="HandleSubmit">
+        <div class="row g-2">
+            <div class="col-6">
+                <RadzenTextBox @bind-Value="model.FirstName" Name="FirstName" Placeholder="First name" Style="width:100%" />
+                <RadzenRequiredValidator Component="FirstName" Text="First name is required" />
+            </div>
+            <div class="col-6">
+                <RadzenTextBox @bind-Value="model.LastName" Name="LastName" Placeholder="Last name" Style="width:100%" />
+                <RadzenRequiredValidator Component="LastName" Text="Last name is required" />
+            </div>
+            <div class="col-6">
+                <RadzenTextBox @bind-Value="model.Email" Name="Email" Placeholder="Email (optional)" Style="width:100%" />
+            </div>
+            <div class="col-6">
+                <RadzenTextBox @bind-Value="model.Phone" Name="Phone" Placeholder="Phone (optional)" Style="width:100%" />
+            </div>
+            <div class="col-12">
+                <label class="form-label" style="display:block;">Notes</label>
+                <RadzenTextArea @bind-Value="model.Notes" Name="Notes" Placeholder="Notes about this person (optional)" Style="width:100%" Rows="4" />
+            </div>
+            <div class="col-12" style="margin-top:.5rem;">
+                <RadzenCheckBox @bind-Value="model.Active" TriState="false" />
+                <label style="margin-left:.5rem;">Active</label>
+            </div>
+        </div>
+
+        <div class="d-flex justify-content-end" style="margin-top: 1rem; gap: .5rem;">
+            <RadzenButton Text="Cancel" ButtonStyle="ButtonStyle.Light" Click="@(() => Dialogs.Close(false))" />
+            <RadzenButton Text="Save" Icon="save" ButtonStyle="ButtonStyle.Primary" Type="ButtonType.Submit" />
+        </div>
+    </RadzenTemplateForm>
+</div>
+
+@code {
+    [Parameter]
+    public int PersonId { get; set; }
+
+    private EditPersonModel model = new();
+    private bool initialized;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!firstRender || initialized) return;
+        initialized = true;
+        try
+        {
+            var d = await People.GetDetailsAsync(PersonId);
+            if (d != null)
+            {
+                model = new EditPersonModel
+                {
+                    FirstName = d.FirstName,
+                    LastName = d.LastName,
+                    Email = d.Email,
+                    Phone = d.Phone,
+                    Notes = d.Notes,
+                    Active = d.Active
+                };
+                await InvokeAsync(StateHasChanged);
+            }
+        }
+        catch
+        {
+        }
+    }
+
+    private async Task HandleSubmit(EditPersonModel _)
+    {
+        try
+        {
+            var req = new UpdatePersonRequest
+            {
+                FirstName = model.FirstName,
+                LastName = model.LastName,
+                Email = model.Email,
+                Phone = model.Phone,
+                Notes = model.Notes,
+                Active = model.Active
+            };
+            await People.UpdatePersonAsync(PersonId, req);
+
+            Notifications.Notify(new NotificationMessage
+            {
+                Severity = NotificationSeverity.Success,
+                Summary = "Saved",
+                Detail = "Person updated.",
+                Duration = 3000
+            });
+
+            Dialogs.Close(true);
+        }
+        catch (Exception ex)
+        {
+            Notifications.Notify(new NotificationMessage
+            {
+                Severity = NotificationSeverity.Error,
+                Summary = "Failed to save person",
+                Detail = ex.Message,
+                Duration = 5000
+            });
+        }
+    }
+
+    private class EditPersonModel
+    {
+        [Required, MaxLength(100)]
+        public string FirstName { get; set; } = string.Empty;
+        [Required, MaxLength(100)]
+        public string LastName { get; set; } = string.Empty;
+        [MaxLength(200)]
+        public string? Email { get; set; }
+        [MaxLength(32)]
+        public string? Phone { get; set; }
+        [MaxLength(1000)]
+        public string? Notes { get; set; }
+        public bool Active { get; set; } = true;
+    }
+}
+

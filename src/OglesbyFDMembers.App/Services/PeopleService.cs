@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.ComponentModel.DataAnnotations;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
@@ -396,6 +397,7 @@ public class PeopleService
                 p.LastName,
                 p.Email,
                 p.Phone,
+                p.Notes,
                 p.Active,
                 p.CreatedUtc
             })
@@ -479,6 +481,7 @@ public class PeopleService
             LastName = person.LastName,
             Email = person.Email,
             Phone = person.Phone,
+            Notes = person.Notes,
             Active = person.Active,
             CreatedUtc = person.CreatedUtc,
             Addresses = addresses,
@@ -486,6 +489,26 @@ public class PeopleService
             CurrentYearPaid = currentPaid,
             CurrentYearOwed = currentOwed
         };
+    }
+
+    public async Task UpdatePersonAsync(int personId, UpdatePersonRequest req, CancellationToken ct = default)
+    {
+        var person = await _db.People.FirstOrDefaultAsync(p => p.Id == personId, ct);
+        if (person == null) throw new InvalidOperationException("Person not found.");
+
+        var first = (req.FirstName ?? string.Empty).Trim();
+        var last = (req.LastName ?? string.Empty).Trim();
+        if (string.IsNullOrWhiteSpace(first) || string.IsNullOrWhiteSpace(last))
+            throw new ValidationException("First and Last name are required.");
+
+        person.FirstName = first;
+        person.LastName = last;
+        person.Email = string.IsNullOrWhiteSpace(req.Email) ? null : req.Email.Trim();
+        person.Phone = string.IsNullOrWhiteSpace(req.Phone) ? null : req.Phone.Trim();
+        person.Notes = string.IsNullOrWhiteSpace(req.Notes) ? null : req.Notes.Trim();
+        person.Active = req.Active;
+
+        await _db.SaveChangesAsync(ct);
     }
 
     private static string? FormatAddress(string? line1, string? line2, string? city, string? state, string? postal)
@@ -529,6 +552,7 @@ public class PersonDetails
     public string LastName { get; set; } = string.Empty;
     public string? Email { get; set; }
     public string? Phone { get; set; }
+    public string? Notes { get; set; }
     public bool Active { get; set; }
     public DateTime CreatedUtc { get; set; }
     public List<MailingAddress> Addresses { get; set; } = new();
@@ -539,6 +563,17 @@ public class PersonDetails
     public decimal CurrentYearPaid { get; set; }
     public decimal CurrentYearOwed { get; set; }
 }
+
+public class UpdatePersonRequest
+{
+    public string FirstName { get; set; } = string.Empty;
+    public string LastName { get; set; } = string.Empty;
+    public string? Email { get; set; }
+    public string? Phone { get; set; }
+    public string? Notes { get; set; }
+    public bool Active { get; set; }
+}
+
 
 public class MailingAddress
 {

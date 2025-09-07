@@ -16,6 +16,6 @@ public class PersonConfig : IEntityTypeConfiguration<Person>
         builder.Property(p => p.LastName).HasMaxLength(100).IsRequired();
         builder.Property(p => p.Email).HasMaxLength(200);
         builder.Property(p => p.Phone).HasMaxLength(32);
+        builder.Property(p => p.Notes).HasMaxLength(1000);
     }
 }
-

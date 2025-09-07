@@ -30,6 +30,9 @@ public class Person
     [MaxLength(32)]
     public string? Phone { get; set; }
 
+    [MaxLength(1000)]
+    public string? Notes { get; set; }
+
     public bool Active { get; set; } = true;
 
     public DateTime CreatedUtc { get; set; }
