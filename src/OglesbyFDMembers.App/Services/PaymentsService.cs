@@ -35,7 +35,8 @@ public class PaymentsService
                 CheckNumber = p.CheckNumber,
                 IsDonation = p.IsDonation,
                 Notes = p.Notes,
-                TargetPropertyId = p.TargetPropertyId
+                TargetPropertyId = p.TargetPropertyId,
+                TargetYear = p.TargetYear
             })
             .ToListAsync(ct);
 
@@ -66,7 +67,8 @@ public class PaymentsService
                 }
                 else
                 {
-                    i.YearDisplay = "—";
+                    // No allocations. If a target year is present, show it as pending.
+                    i.YearDisplay = i.TargetYear.HasValue ? $"Pending {i.TargetYear}" : "—";
                 }
             }
         }
@@ -141,6 +143,19 @@ public class PaymentsService
         {
             var mode = request.AllocationMode ?? AllocationMode.SplitAcrossAll;
             var year = request.AllocationYear ?? DateTime.UtcNow.Year;
+            var currentYear = DateTime.UtcNow.Year;
+
+            // If the selected year is in the future, record intent and skip allocation now.
+            if (year > currentYear)
+            {
+                var payment = await _db.Payments.FirstAsync(p => p.Id == paymentId, ct);
+                payment.TargetYear = year;
+                // For future-year single targeting we would need a property selection.
+                // Current UI only supports splitting when no assessments exist; keep TargetPropertyId null.
+                await _db.SaveChangesAsync(ct);
+                await tx.CommitAsync(ct);
+                return paymentId;
+            }
 
             if (mode == AllocationMode.SingleAssessment)
             {
@@ -243,6 +258,118 @@ public class PaymentsService
         return paymentId;
     }
 
+    /// <summary>
+    /// Idempotently allocate pending payments for the specified year.
+    /// Pending payments are those with TargetYear == year, IsDonation == false,
+    /// and no existing allocations. Allocates using the same split logic
+    /// across open assessments for the person for that year.
+    /// </summary>
+    public async Task<int> AllocatePendingForYearAsync(int year, CancellationToken ct = default)
+    {
+        var today = DateTime.UtcNow.Date;
+
+        // Find payments that target this year and are not yet allocated
+        var pending = await _db.Payments
+            .Where(p => p.TargetYear == year && !p.IsDonation)
+            .Select(p => new { p.Id, p.PersonId })
+            .ToListAsync(ct);
+
+        if (pending.Count == 0) return 0;
+
+        // Exclude those with any existing allocations
+        var pendingIds = pending.Select(p => p.Id).ToList();
+        var allocatedIds = await _db.PaymentAllocations
+            .Where(a => pendingIds.Contains(a.PaymentId))
+            .Select(a => a.PaymentId)
+            .Distinct()
+            .ToListAsync(ct);
+
+        var toApply = pending.Where(p => !allocatedIds.Contains(p.Id)).ToList();
+        if (toApply.Count == 0) return 0;
+
+        int appliedCount = 0;
+
+        await using var tx = await _db.Database.BeginTransactionAsync(ct);
+
+        foreach (var p in toApply)
+        {
+            var payment = await _db.Payments.FirstAsync(x => x.Id == p.Id, ct);
+
+            // Split across all open assessments for the person for the given year (based on ownership as-of today)
+            var openAss = await (from o in _db.Ownerships
+                                 where o.PersonId == p.PersonId && o.StartDate <= today && (o.EndDate == null || o.EndDate >= today)
+                                 join s in _db.Assessments.Where(a => a.Year == year) on o.PropertyId equals s.PropertyId
+                                 select s).Distinct().ToListAsync(ct);
+
+            var withBalance = openAss
+                .Select(a => new { A = a, Balance = Math.Max(0, a.AmountDue - a.AmountPaid) })
+                .Where(x => x.Balance > 0)
+                .ToList();
+
+            if (withBalance.Count == 0)
+            {
+                // No assessments or all paid: leave as pending
+                continue;
+            }
+
+            var amount = payment.Amount;
+            var totalBalance = withBalance.Sum(x => x.Balance);
+
+            if (amount >= totalBalance)
+            {
+                foreach (var x in withBalance)
+                {
+                    if (x.Balance <= 0) continue;
+                    _db.PaymentAllocations.Add(new PaymentAllocation
+                    {
+                        PaymentId = payment.Id,
+                        AssessmentId = x.A.Id,
+                        Amount = x.Balance
+                    });
+                    x.A.AmountPaid += x.Balance;
+                }
+            }
+            else
+            {
+                decimal allocated = 0;
+                for (int i = 0; i < withBalance.Count; i++)
+                {
+                    var x = withBalance[i];
+                    decimal alloc;
+                    if (i == withBalance.Count - 1)
+                    {
+                        alloc = amount - allocated; // remainder
+                    }
+                    else
+                    {
+                        alloc = Math.Round(amount * (x.Balance / totalBalance), 2, MidpointRounding.AwayFromZero);
+                    }
+
+                    alloc = Math.Min(alloc, x.Balance);
+                    if (alloc <= 0) continue;
+
+                    _db.PaymentAllocations.Add(new PaymentAllocation
+                    {
+                        PaymentId = payment.Id,
+                        AssessmentId = x.A.Id,
+                        Amount = alloc
+                    });
+                    x.A.AmountPaid += alloc;
+                    allocated += alloc;
+                }
+            }
+
+            // Clear the target year now that it has been applied
+            payment.TargetYear = null;
+            appliedCount++;
+
+            await _db.SaveChangesAsync(ct);
+        }
+
+        await tx.CommitAsync(ct);
+        return appliedCount;
+    }
+
     public async Task<List<AssessmentOption>> ListAssessmentOptionsAsync(int personId, int? year = null, CancellationToken ct = default)
     {
         var y = year ?? DateTime.UtcNow.Year;
@@ -300,6 +427,7 @@ public class PaymentListItem
     public string? YearDisplay { get; set; }
     public int? TargetPropertyId { get; set; }
     public string? AppliedTo { get; set; }
+    public int? TargetYear { get; set; }
 }
 
 public class AddPaymentRequest

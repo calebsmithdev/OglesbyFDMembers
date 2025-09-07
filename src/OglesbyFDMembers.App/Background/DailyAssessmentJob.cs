@@ -44,9 +44,17 @@ public class DailyAssessmentJob : BackgroundService
         {
             var year = DateTime.UtcNow.Year;
             using var scope = _sp.CreateScope();
-            var svc = scope.ServiceProvider.GetRequiredService<RolloverService>();
-            var created = await svc.CreateMissingAssessmentsAsync(year, ct);
-            _logger.LogInformation("DailyAssessmentJob completed for {Year}. Created {Count} missing assessments.", year, created);
+            var rollover = scope.ServiceProvider.GetRequiredService<RolloverService>();
+            var created = await rollover.CreateMissingAssessmentsAsync(year, ct);
+
+            // After ensuring assessments exist, auto-allocate any pending future-year
+            // payments that target the current year. Safe to run daily and idempotent.
+            var payments = scope.ServiceProvider.GetRequiredService<OglesbyFDMembers.App.Services.PaymentsService>();
+            var applied = await payments.AllocatePendingForYearAsync(year, ct);
+
+            _logger.LogInformation(
+                "DailyAssessmentJob completed for {Year}. Created {Created} assessments; auto-applied {Applied} pending payments.",
+                year, created, applied);
         }
         catch (OperationCanceledException)
         {
@@ -58,4 +66,3 @@ public class DailyAssessmentJob : BackgroundService
         }
     }
 }
-

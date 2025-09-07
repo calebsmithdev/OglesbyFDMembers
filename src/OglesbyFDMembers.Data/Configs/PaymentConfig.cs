@@ -32,6 +32,7 @@ public class PaymentConfig : IEntityTypeConfiguration<Payment>
             .HasForeignKey(p => p.TargetPropertyId)
             .OnDelete(DeleteBehavior.Restrict);
 
+        builder.HasIndex(p => p.TargetYear);
         builder.HasIndex(p => p.TargetPropertyId);
     }
 }

@@ -54,12 +54,15 @@
                     <InputRadioGroup @bind-Value="model.Mode">
                         <div class="form-check">
                             <InputRadio Value="AllocationMode.SplitAcrossAll" class="form-check-input" />
-                            <label class="form-check-label">Split across all current-year assessments</label>
+                            <label class="form-check-label">Split across all selected-year assessments</label>
                         </div>
-                        <div class="form-check" style="margin-top:.25rem;">
-                            <InputRadio Value="AllocationMode.SingleAssessment" class="form-check-input" />
-                            <label class="form-check-label">Apply to a single assessment</label>
-                        </div>
+                        @if (assessments.Count > 0)
+                        {
+                            <div class="form-check" style="margin-top:.25rem;">
+                                <InputRadio Value="AllocationMode.SingleAssessment" class="form-check-input" />
+                                <label class="form-check-label">Apply to a single assessment</label>
+                            </div>
+                        }
                     </InputRadioGroup>
                 </div>
                 @if (model.Mode == AllocationMode.SingleAssessment)
@@ -113,8 +116,9 @@
         try
         {
             years = await People.GetAvailableYearsAsync(_cts.Token);
-            selectedYear = years.FirstOrDefault();
-            if (selectedYear == 0) selectedYear = DateTime.UtcNow.Year;
+            var currentYear = DateTime.UtcNow.Year;
+            selectedYear = years.Contains(currentYear) ? currentYear : years.FirstOrDefault();
+            if (selectedYear == 0) selectedYear = currentYear;
             assessments = await Payments.ListAssessmentOptionsAsync(PersonId, selectedYear, _cts.Token);
         }
         catch (OperationCanceledException)
@@ -184,6 +188,11 @@
             // clear target if year changed
             model.TargetAssessmentId = null;
         }
+        if (assessments.Count == 0)
+        {
+            // No assessments for selected year (likely future). Force split mode.
+            model.Mode = AllocationMode.SplitAcrossAll;
+        }
     }
 
     private async Task OnYearAfterChange()
@@ -232,6 +241,13 @@
     private RenderFragment AllocationHelp => builder =>
     {
         var seq = 0;
-        builder.AddContent(seq++, "By default, payments are split proportionally across all current-year open assessments. Selecting a specific assessment targets only that property.");
+        if (assessments.Count == 0)
+        {
+            builder.AddContent(seq++, "No assessments exist for the selected year. The payment will be recorded now and auto-applied when that year begins.");
+        }
+        else
+        {
+            builder.AddContent(seq++, "By default, payments are split proportionally across all selected-year open assessments. Selecting a specific assessment targets only that property.");
+        }
     };
 }

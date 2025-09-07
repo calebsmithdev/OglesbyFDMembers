@@ -171,16 +171,21 @@ public class PeopleService
 
     public async Task<List<int>> GetAvailableYearsAsync(CancellationToken ct = default)
     {
-        var years = await _db.Assessments
+        var existing = await _db.Assessments
             .Select(a => a.Year)
             .Distinct()
-            .OrderByDescending(y => y)
             .ToListAsync(ct);
-        if (years.Count == 0)
-        {
-            years.Add(DateTime.UtcNow.Year);
-        }
-        return years;
+
+        var nowYear = DateTime.UtcNow.Year;
+        var baseYears = new List<int> { nowYear, nowYear + 1, nowYear + 2 };
+
+        var combined = existing
+            .Concat(baseYears)
+            .Distinct()
+            .OrderByDescending(y => y)
+            .ToList();
+
+        return combined;
     }
 
     public class CreatePropertyRequest

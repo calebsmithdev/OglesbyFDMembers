@@ -65,11 +65,9 @@ else
                                     {
                                         <div class="text-muted" style="font-size:0.9rem;">@p.AddressLine2</div>
                                     }
+                                    <div class="text-muted" style="font-size:0.9rem;">@string.Join(" ", new[] { p.City, p.State, p.Zip }.Where(s => !string.IsNullOrWhiteSpace(s)))</div>
                                 </Template>
                             </RadzenDataGridColumn>
-                            <RadzenDataGridColumn TItem="OglesbyFDMembers.App.Services.OwnedProperty" Property="City" Title="City" Width="140px" />
-                            <RadzenDataGridColumn TItem="OglesbyFDMembers.App.Services.OwnedProperty" Property="State" Title="State" Width="80px" />
-                            <RadzenDataGridColumn TItem="OglesbyFDMembers.App.Services.OwnedProperty" Property="Zip" Title="Zip" Width="100px" />
                             <RadzenDataGridColumn TItem="OglesbyFDMembers.App.Services.OwnedProperty" Title="Paid (YTD)" Width="130px">
                                 <Template Context="p">@p.CurrentYearAmountPaid.ToString("C")</Template>
                             </RadzenDataGridColumn>
@@ -186,6 +184,9 @@ else
                         <Columns>
                             <RadzenDataGridColumn TItem="OglesbyFDMembers.App.Services.PaymentListItem" Title="Date" Width="160px">
                                 <Template Context="p">@p.PaidUtc.ToLocalTime().ToString("yyyy-MM-dd HH:mm")</Template>
+                            </RadzenDataGridColumn>
+                            <RadzenDataGridColumn TItem="OglesbyFDMembers.App.Services.PaymentListItem" Title="Year" Width="120px">
+                                <Template Context="p">@(!string.IsNullOrWhiteSpace(p.YearDisplay) ? p.YearDisplay : "—")</Template>
                             </RadzenDataGridColumn>
                             <RadzenDataGridColumn TItem="OglesbyFDMembers.App.Services.PaymentListItem" Title="Applied To" Width="200px">
                                 <Template Context="p">@p.AppliedTo</Template>

@@ -41,6 +41,13 @@ public class Payment
     public string? Notes { get; set; }
 
     /// <summary>
+    /// Optional target year for applying this payment. When set to a future
+    /// year, allocations are deferred until that year begins and assessments
+    /// exist. This ensures current-year status is unaffected.
+    /// </summary>
+    public int? TargetYear { get; set; }
+
+    /// <summary>
     /// When set, denotes this payment targets a single property.
     /// When null and not a donation, allocation is treated as a split across properties.
     /// </summary>
