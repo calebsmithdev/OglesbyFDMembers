@@ -1,0 +1,103 @@
+@using System.ComponentModel.DataAnnotations
+@using OglesbyFDMembers.App.Services
+@inject Radzen.DialogService Dialogs
+@inject Radzen.NotificationService Notifications
+@inject OglesbyFDMembers.App.Services.PeopleService People
+@inject OglesbyFDMembers.App.Services.RolloverService Rollover
+
+<div style="padding: 1rem;">
+    <h4 style="margin-top:0;">Add Property</h4>
+
+    <RadzenTemplateForm TItem="AddPropertyModel" Data="model" Submit="HandleSubmit">
+        <div class="row g-2">
+            <div class="col-12">
+                <RadzenTextBox @bind-Value="model.AddressLine1" Name="AddressLine1" Placeholder="Address Line 1" Style="width:100%" />
+                <RadzenRequiredValidator Component="AddressLine1" Text="Address Line 1 is required" />
+            </div>
+            <div class="col-12">
+                <RadzenTextBox @bind-Value="model.AddressLine2" Name="AddressLine2" Placeholder="Address Line 2 (optional)" Style="width:100%" />
+            </div>
+            <div class="col-6">
+                <RadzenTextBox @bind-Value="model.City" Name="City" Placeholder="City" Style="width:100%" />
+            </div>
+            <div class="col-3">
+                <RadzenTextBox @bind-Value="model.State" Name="State" Placeholder="State" Style="width:100%" />
+            </div>
+            <div class="col-3">
+                <RadzenTextBox @bind-Value="model.Zip" Name="Zip" Placeholder="Zip" Style="width:100%" />
+            </div>
+            <div class="col-12" style="margin-top:.5rem;">
+                <RadzenCheckBox @bind-Value="model.Active" TriState="false" />
+                <label style="margin-left:.5rem;">Active property</label>
+            </div>
+        </div>
+
+        <div class="d-flex justify-content-end" style="margin-top: 1rem; gap: .5rem;">
+            <RadzenButton Text="Cancel" ButtonStyle="ButtonStyle.Light" Click="@(() => Dialogs.Close(false))" />
+            <RadzenButton Text="Save" Icon="save" ButtonStyle="ButtonStyle.Primary" Type="ButtonType.Submit" />
+        </div>
+    </RadzenTemplateForm>
+</div>
+
+@code {
+    [Parameter]
+    public int PersonId { get; set; }
+
+    private AddPropertyModel model = new();
+
+    private async Task HandleSubmit(AddPropertyModel _)
+    {
+        try
+        {
+            var req = new PeopleService.CreatePropertyRequest
+            {
+                AddressLine1 = model.AddressLine1,
+                AddressLine2 = model.AddressLine2,
+                City = model.City,
+                State = model.State,
+                Zip = model.Zip,
+                Active = model.Active
+            };
+
+            await People.AddPropertyToPersonAsync(PersonId, req);
+
+            // Ensure an assessment exists for current year (idempotent)
+            await Rollover.CreateMissingAssessmentsAsync(DateTime.UtcNow.Year);
+
+            Notifications.Notify(new NotificationMessage
+            {
+                Severity = NotificationSeverity.Success,
+                Summary = "Property added",
+                Detail = "Ownership and current-year assessment ensured.",
+                Duration = 3000
+            });
+
+            Dialogs.Close(true);
+        }
+        catch (Exception ex)
+        {
+            Notifications.Notify(new NotificationMessage
+            {
+                Severity = NotificationSeverity.Error,
+                Summary = "Failed to add property",
+                Detail = ex.Message,
+                Duration = 5000
+            });
+        }
+    }
+
+    private class AddPropertyModel
+    {
+        [Required, MaxLength(200)]
+        public string AddressLine1 { get; set; } = string.Empty;
+        [MaxLength(200)]
+        public string? AddressLine2 { get; set; }
+        [MaxLength(100)]
+        public string? City { get; set; }
+        [MaxLength(64)]
+        public string? State { get; set; }
+        [MaxLength(32)]
+        public string? Zip { get; set; }
+        public bool Active { get; set; } = true;
+    }
+}

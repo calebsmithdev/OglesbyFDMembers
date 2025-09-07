@@ -1,6 +1,7 @@
 @page "/people"
 @using OglesbyFDMembers.App.Services
 @inject PeopleService PeopleSvc
+@inject NavigationManager Nav
 @inject Radzen.NotificationService Notifications
 
 <h1>People</h1>
@@ -17,7 +18,19 @@
     <RadzenColumn Size="12" SizeSM="8" SizeMD="6" SizeLG="4">
         <RadzenFormField Text="Search" Variant="Variant.Outlined" Style="width:100%">
             <ChildContent>
-                <RadzenTextBox @bind-Value="search" Style="width:100%" Placeholder="Name, email, phone, address" Change="@(async _ => await LoadAsync())" />
+                <div style="display:flex; align-items:center; gap:.5rem; width:100%;">
+                    <RadzenTextBox @bind-Value="search" Style="flex:1 1 auto; width:100%" Placeholder="Name or any address"
+                                   Debounce="true" Delay="300"
+                                   Change="@(async _ => await LoadAsync())" />
+                    @if (!string.IsNullOrWhiteSpace(search))
+                    {
+                        <RadzenButton Icon="close" ButtonStyle="ButtonStyle.Light" Size="ButtonSize.Small" Click="@ClearSearch" Title="Clear" />
+                    }
+                    @if (loading)
+                    {
+                        <RadzenProgressBar ShowValue="false" Mode="ProgressBarMode.Indeterminate" Style="width:60px;height:8px;" />
+                    }
+                </div>
             </ChildContent>
         </RadzenFormField>
     </RadzenColumn>
@@ -25,6 +38,17 @@
 
 <RadzenDataGrid @ref="grid" Data="people" TItem="PersonListItem" RowHeight="38" AllowSorting AllowPaging AllowFiltering="false" PageSize="25">
     <Columns>
+        <RadzenDataGridColumn TItem="PersonListItem" Title="" Width="90px">
+            <Template Context="item">
+                <RadzenButton Text="View" Icon="visibility" Size="ButtonSize.Small" ButtonStyle="ButtonStyle.Light" Click="@(() => ViewPerson(item.PersonId))" />
+            </Template>
+            <HeaderTemplate>
+                <span></span>
+            </HeaderTemplate>
+            <FooterTemplate>
+                <span></span>
+            </FooterTemplate>
+        </RadzenDataGridColumn>
         <RadzenDataGridColumn TItem="PersonListItem" Property="FullName" Title="Name" Width="220px" />
         <RadzenDataGridColumn TItem="PersonListItem" Property="Address" Title="Address" Width="340px" />
         <RadzenDataGridColumn TItem="PersonListItem" Property="Phone" Title="Phone" Width="140px" />
@@ -43,6 +67,7 @@
     private List<int> years = new();
     private int year;
     private string? search;
+    private bool loading;
 
     protected override async Task OnInitializedAsync()
     {
@@ -57,8 +82,27 @@
 
     private async Task LoadAsync()
     {
-        people = await PeopleSvc.ListAsync(year, search);
+        loading = true;
+        try
+        {
+            people = await PeopleSvc.ListAsync(year, search);
+        }
+        finally
+        {
+            loading = false;
+        }
         await InvokeAsync(StateHasChanged);
+    }
+
+    private async Task ClearSearch()
+    {
+        search = null;
+        await LoadAsync();
+    }
+
+    private void ViewPerson(int personId)
+    {
+        Nav.NavigateTo($"/people/{personId}");
     }
 
     private RenderFragment PaymentStatusTemplate(PersonListItem item) => builder =>

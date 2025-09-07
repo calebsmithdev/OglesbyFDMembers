@@ -22,6 +22,11 @@ builder.Services.AddMediator();
 builder.Services.AddScoped<OglesbyFDMembers.App.Services.IntakeService>();
 builder.Services.AddScoped<OglesbyFDMembers.App.Services.FeeScheduleService>();
 builder.Services.AddScoped<OglesbyFDMembers.App.Services.PeopleService>();
+builder.Services.AddScoped<OglesbyFDMembers.App.Services.PaymentsService>();
+builder.Services.AddScoped<OglesbyFDMembers.App.Services.RolloverService>();
+
+// Background jobs
+builder.Services.AddHostedService<OglesbyFDMembers.App.Background.DailyAssessmentJob>();
 
 var app = builder.Build();
 

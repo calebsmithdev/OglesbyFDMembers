@@ -1,0 +1,237 @@
+@using System.ComponentModel.DataAnnotations
+@using OglesbyFDMembers.App.Services
+@using OglesbyFDMembers.Domain.Enums
+@inject Radzen.DialogService Dialogs
+@inject Radzen.NotificationService Notifications
+@inject OglesbyFDMembers.App.Services.PaymentsService Payments
+@inject OglesbyFDMembers.App.Services.PeopleService People
+@implements IDisposable
+
+<div style="padding: 1rem;">
+    <h4 style="margin-top:0;">Add Payment</h4>
+
+    <RadzenTemplateForm TItem="AddPaymentModel" Data="model" Submit="HandleValidSubmit">
+        <div class="row g-2">
+            <div class="col-6">
+                <label class="form-label" style="display:block;">Year</label>
+                <InputSelect class="form-select" @bind-Value="selectedYear" @bind-Value:after="OnYearAfterChange">
+                    @foreach (var y in years)
+                    {
+                        <option value="@y">@y</option>
+                    }
+                </InputSelect>
+            </div>
+            <div class="col-6">
+                <RadzenNumeric @bind-Value="model.Amount" Name="Amount" Style="width:100%" Placeholder="Amount" />
+                <RadzenRequiredValidator Component="Amount" Text="Amount is required" />
+            </div>
+            <div class="col-6">
+                <label class="form-label" style="display:block;">Payment Type</label>
+                <InputSelect class="form-select" @bind-Value="model.PaymentType">
+                    <option value="@PaymentType.Cash">Cash</option>
+                    <option value="@PaymentType.Check">Check</option>
+                    <option value="@PaymentType.Utility">Utility</option>
+                </InputSelect>
+            </div>
+            <div class="col-6">
+                <label class="form-label" style="display:block;">Paid Date (optional)</label>
+                <InputDate class="form-control" @bind-Value="model.PaidDate" />
+            </div>
+            @if (model.PaymentType == PaymentType.Check)
+            {
+                <div class="col-6">
+                    <RadzenTextBox @bind-Value="model.CheckNumber" Name="CheckNumber" Placeholder="Check # (optional)" Style="width:100%" />
+                </div>
+            }
+            <div class="col-12">
+                <RadzenCheckBox @bind-Value="model.IsDonation" TriState="false" />
+                <label style="margin-left: .5rem;">Donation</label>
+            </div>
+            @if (!model.IsDonation)
+            {
+                <div class="col-12" style="margin-top:.5rem;">
+                    <label class="form-label" style="display:block;">Allocation</label>
+                    <InputRadioGroup @bind-Value="model.Mode">
+                        <div class="form-check">
+                            <InputRadio Value="AllocationMode.SplitAcrossAll" class="form-check-input" />
+                            <label class="form-check-label">Split across all current-year assessments</label>
+                        </div>
+                        <div class="form-check" style="margin-top:.25rem;">
+                            <InputRadio Value="AllocationMode.SingleAssessment" class="form-check-input" />
+                            <label class="form-check-label">Apply to a single assessment</label>
+                        </div>
+                    </InputRadioGroup>
+                </div>
+                @if (model.Mode == AllocationMode.SingleAssessment)
+                {
+                    <div class="col-12">
+                        <label class="form-label" style="display:block;">Assessment</label>
+                        <InputSelect class="form-select" @bind-Value="model.TargetAssessmentId">
+                            <option value="">Select…</option>
+                            @foreach (var a in assessments)
+                            {
+                                <option value="@a.AssessmentId">@FormatAssessment(a)</option>
+                            }
+                        </InputSelect>
+                    </div>
+                }
+                <div class="col-12 text-muted" style="font-size:0.9rem;">
+                    @AllocationHelp
+                </div>
+            }
+            <div class="col-12">
+                <RadzenTextArea @bind-Value="model.Notes" Name="Notes" Placeholder="Notes (optional)" Style="width:100%" Rows="3" />
+            </div>
+        </div>
+
+        <div class="d-flex justify-content-end" style="margin-top: 1rem; gap: .5rem;">
+            <RadzenButton Text="Cancel" ButtonStyle="ButtonStyle.Light" Click="@(() => Dialogs.Close(false))" />
+            <RadzenButton Text="Save" Icon="save" ButtonStyle="ButtonStyle.Primary" Type="ButtonType.Submit" />
+        </div>
+    </RadzenTemplateForm>
+</div>
+
+@code {
+    [Parameter]
+    public int PersonId { get; set; }
+
+    private AddPaymentModel model = new()
+    {
+        PaymentType = PaymentType.Cash
+    };
+
+    private List<OglesbyFDMembers.App.Services.AssessmentOption> assessments = new();
+    private List<int> years = new();
+    private int selectedYear;
+
+    private CancellationTokenSource _cts = new();
+    private bool _disposed;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!firstRender || _disposed) return;
+        try
+        {
+            years = await People.GetAvailableYearsAsync(_cts.Token);
+            selectedYear = years.FirstOrDefault();
+            if (selectedYear == 0) selectedYear = DateTime.UtcNow.Year;
+            assessments = await Payments.ListAssessmentOptionsAsync(PersonId, selectedYear, _cts.Token);
+        }
+        catch (OperationCanceledException)
+        {
+            return;
+        }
+        if (!_disposed)
+        {
+            await InvokeAsync(StateHasChanged);
+        }
+    }
+
+    private async Task HandleValidSubmit(AddPaymentModel _)
+    {
+        try
+        {
+            var req = new OglesbyFDMembers.App.Services.AddPaymentRequest
+            {
+                PersonId = PersonId,
+                Amount = model.Amount,
+                PaymentType = model.PaymentType,
+                PaidDateUtc = model.PaidDate?.ToUniversalTime(),
+                CheckNumber = model.PaymentType == PaymentType.Check ? model.CheckNumber : null,
+                IsDonation = model.IsDonation,
+                Notes = model.Notes,
+                AllocationMode = model.IsDonation ? null : model.Mode,
+                AllocationYear = selectedYear,
+                TargetAssessmentId = model.IsDonation || model.Mode != AllocationMode.SingleAssessment ? null : model.TargetAssessmentId
+            };
+
+            // Create and allocate based on selection
+            await Payments.CreateAndAllocateAsync(req);
+
+            Notifications.Notify(new NotificationMessage
+            {
+                Severity = NotificationSeverity.Success,
+                Summary = "Payment added",
+                Duration = 3000
+            });
+
+            Dialogs.Close(true);
+        }
+        catch (Exception ex)
+        {
+            Notifications.Notify(new NotificationMessage
+            {
+                Severity = NotificationSeverity.Error,
+                Summary = "Failed to add payment",
+                Detail = ex.Message,
+                Duration = 5000
+            });
+        }
+    }
+
+    private async Task ReloadAssessments()
+    {
+        try
+        {
+            assessments = await Payments.ListAssessmentOptionsAsync(PersonId, selectedYear, _cts.Token);
+        }
+        catch (OperationCanceledException)
+        {
+            return;
+        }
+        if (model.Mode == AllocationMode.SingleAssessment)
+        {
+            // clear target if year changed
+            model.TargetAssessmentId = null;
+        }
+    }
+
+    private async Task OnYearAfterChange()
+    {
+        await ReloadAssessments();
+        if (!_disposed)
+        {
+            await InvokeAsync(StateHasChanged);
+        }
+    }
+
+    public void Dispose()
+    {
+        if (_disposed) return;
+        _disposed = true;
+        try { _cts.Cancel(); } catch { }
+        _cts.Dispose();
+    }
+
+    private class AddPaymentModel
+    {
+        [Required]
+        [Range(0.01, 1000000)]
+        public decimal Amount { get; set; }
+
+        [Required]
+        public PaymentType PaymentType { get; set; } = PaymentType.Cash;
+
+        public DateTime? PaidDate { get; set; }
+        public string? CheckNumber { get; set; }
+        public bool IsDonation { get; set; }
+        public string? Notes { get; set; }
+
+        public AllocationMode Mode { get; set; } = AllocationMode.SplitAcrossAll;
+        public int? TargetAssessmentId { get; set; }
+    }
+
+    private string FormatAssessment(OglesbyFDMembers.App.Services.AssessmentOption a)
+    {
+        var addr = a.Address;
+        var citystate = string.Join(" ", new[] { a.City, a.State, a.Zip }.Where(s => !string.IsNullOrWhiteSpace(s)));
+        if (!string.IsNullOrWhiteSpace(citystate)) addr += ", " + citystate;
+        return $"{addr} — Due: {a.AmountDue:C} Paid: {a.AmountPaid:C} Bal: {(a.Balance):C}";
+    }
+
+    private RenderFragment AllocationHelp => builder =>
+    {
+        var seq = 0;
+        builder.AddContent(seq++, "By default, payments are split proportionally across all current-year open assessments. Selecting a specific assessment targets only that property.");
+    };
+}

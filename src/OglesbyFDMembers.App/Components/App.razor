@@ -16,6 +16,12 @@
 
 <body>
     <Routes @rendermode="InteractiveServer" />
+    
+    <!-- Radzen service hosts -->
+    <RadzenDialog />
+    <RadzenNotification />
+    <RadzenTooltip />
+    <RadzenContextMenu />
     <script src="_framework/blazor.web.js"></script>
     <script src="_content/Radzen.Blazor/Radzen.Blazor.js?v=@(typeof(Radzen.Colors).Assembly.GetName().Version)"></script>
 </body>

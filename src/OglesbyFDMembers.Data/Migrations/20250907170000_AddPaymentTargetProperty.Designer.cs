@@ -11,10 +11,9 @@ using OglesbyFDMembers.Data;
 namespace OglesbyFDMembers.Data.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20250907054405_Initial")]
-    partial class Initial
+    [Migration("20250907170000_AddPaymentTargetProperty")]
+    partial class AddPaymentTargetProperty
     {
-        /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
@@ -126,6 +125,9 @@ namespace OglesbyFDMembers.Data.Migrations
                         .HasColumnType("INTEGER");
 
                     b.Property<int>("PersonId")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int?>("TargetPropertyId")
                         .HasColumnType("INTEGER");
 
                     b.HasKey("Id");
@@ -304,39 +306,6 @@ namespace OglesbyFDMembers.Data.Migrations
                     b.ToTable("Properties", (string)null);
                 });
 
-            modelBuilder.Entity("OglesbyFDMembers.Domain.Entities.UtilityNotice", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("INTEGER");
-
-                    b.Property<decimal>("Amount")
-                        .HasColumnType("decimal(10,2)");
-
-                    b.Property<DateTime>("ImportedUtc")
-                        .HasColumnType("TEXT");
-
-                    b.Property<bool>("IsAllocated")
-                        .HasColumnType("INTEGER");
-
-                    b.Property<int?>("MatchedPersonId")
-                        .HasColumnType("INTEGER");
-
-                    b.Property<bool>("NeedsReview")
-                        .HasColumnType("INTEGER");
-
-                    b.Property<string>("PayerNameRaw")
-                        .IsRequired()
-                        .HasMaxLength(200)
-                        .HasColumnType("TEXT");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("MatchedPersonId", "IsAllocated");
-
-                    b.ToTable("UtilityNotices", (string)null);
-                });
-
             modelBuilder.Entity("OglesbyFDMembers.Domain.Entities.Assessment", b =>
                 {
                     b.HasOne("OglesbyFDMembers.Domain.Entities.Property", "Property")
@@ -469,3 +438,4 @@ namespace OglesbyFDMembers.Data.Migrations
         }
     }
 }
+

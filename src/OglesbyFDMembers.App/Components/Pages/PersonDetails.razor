@@ -1,0 +1,400 @@
+@page "/people/{id:int}"
+@using OglesbyFDMembers.App.Components.People
+@using OglesbyFDMembers.App.Services
+@inject PeopleService PeopleSvc
+@inject Radzen.NotificationService Notifications
+@inject NavigationManager Nav
+@inject Radzen.DialogService Dialogs
+@inject OglesbyFDMembers.App.Services.PaymentsService PaymentSvc
+
+<h1>Person Details</h1>
+
+@if (loading)
+{
+    <RadzenProgressBar ShowValue="false" Mode="ProgressBarMode.Indeterminate" Style="width: 240px;" />
+}
+else if (details == null)
+{
+    <div class="alert alert-warning">Person not found.</div>
+}
+else
+{
+    <RadzenCard Style="margin-bottom:1rem;">
+        <div class="d-flex justify-content-between align-items-center">
+            <div>
+                <h4 style="margin: 0;">@details.FullName</h4>
+                <div class="text-muted" style="font-size:0.9rem;">ID: @details.PersonId</div>
+            </div>
+            <div>
+                @if (details.Active)
+                {
+                    <RadzenBadge Text="Active" Style="margin-right: 0.5rem;" />
+                }
+                else
+                {
+                    <RadzenBadge Text="Inactive" Style="margin-right: 0.5rem; background:#b00020;color:#fff;" />
+                }
+                <RadzenButton Text="Back to People" Icon="arrow_back" ButtonStyle="ButtonStyle.Light" Click='@(() => Nav.NavigateTo("/people"))' />
+            </div>
+        </div>
+        <div class="mt-2">
+            <div><strong>Email:</strong> @(!string.IsNullOrWhiteSpace(details.Email) ? details.Email : "—")</div>
+            <div><strong>Phone:</strong> @(!string.IsNullOrWhiteSpace(details.Phone) ? details.Phone : "—")</div>
+            <div class="mt-1">
+                <RadzenBadge Style="margin-right:.5rem;" Text="@($"Paid (YTD): {details.CurrentYearPaid:C}")" />
+                <RadzenBadge Style="background:#b00020;color:#fff;" Text="@($"Owed (YTD): {details.CurrentYearOwed:C}")" />
+            </div>
+        </div>
+    </RadzenCard>
+
+    <RadzenRow Wrap="FlexWrap.Wrap" Gap="1rem">
+        <RadzenColumn Size="12" SizeSM="12" SizeMD="6">
+            <RadzenCard>
+                <div class="d-flex justify-content-between align-items-center" style="margin-top:0;">
+                    <h5 style="margin:0;">Owned Properties</h5>
+                    <RadzenButton Text="Add Property" Icon="add" Size="ButtonSize.Small" ButtonStyle="ButtonStyle.Primary" Click="@OpenAddPropertyDialog" />
+                </div>
+                @if (details.Properties?.Count > 0)
+                {
+                    <RadzenDataGrid Data="details.Properties" TItem="OglesbyFDMembers.App.Services.OwnedProperty" AllowPaging PageSize="10" RowHeight="34">
+                        <Columns>
+                            <RadzenDataGridColumn TItem="OglesbyFDMembers.App.Services.OwnedProperty" Title="Address">
+                                <Template Context="p">
+                                    <div>@p.AddressLine1</div>
+                                    @if (!string.IsNullOrWhiteSpace(p.AddressLine2))
+                                    {
+                                        <div class="text-muted" style="font-size:0.9rem;">@p.AddressLine2</div>
+                                    }
+                                </Template>
+                            </RadzenDataGridColumn>
+                            <RadzenDataGridColumn TItem="OglesbyFDMembers.App.Services.OwnedProperty" Property="City" Title="City" Width="140px" />
+                            <RadzenDataGridColumn TItem="OglesbyFDMembers.App.Services.OwnedProperty" Property="State" Title="State" Width="80px" />
+                            <RadzenDataGridColumn TItem="OglesbyFDMembers.App.Services.OwnedProperty" Property="Zip" Title="Zip" Width="100px" />
+                            <RadzenDataGridColumn TItem="OglesbyFDMembers.App.Services.OwnedProperty" Title="Paid (YTD)" Width="130px">
+                                <Template Context="p">@p.CurrentYearAmountPaid.ToString("C")</Template>
+                            </RadzenDataGridColumn>
+                            <RadzenDataGridColumn TItem="OglesbyFDMembers.App.Services.OwnedProperty" Title="Owed (YTD)" Width="130px">
+                                <Template Context="p">
+                                    <span style="color:#b00020;font-weight:600">@p.CurrentYearBalance.ToString("C")</span>
+                                </Template>
+                            </RadzenDataGridColumn>
+                            <RadzenDataGridColumn TItem="OglesbyFDMembers.App.Services.OwnedProperty" Title="Active" Width="80px">
+                                <Template Context="p">
+                                    @if (p.Active)
+                                    {
+                                        <RadzenIcon Icon="check" Style="color: #2e7d32;" />
+                                    }
+                                    else
+                                    {
+                                        <RadzenIcon Icon="close" Style="color: #b00020;" />
+                                    }
+                                </Template>
+                            </RadzenDataGridColumn>
+                        </Columns>
+                    </RadzenDataGrid>
+                }
+                else
+                {
+                    <div class="text-muted">No active properties.</div>
+                }
+            </RadzenCard>
+        </RadzenColumn>
+        <RadzenColumn Size="12" SizeSM="12" SizeMD="6">
+            <RadzenCard>
+                <div class="d-flex justify-content-between align-items-center" style="margin-top:0;">
+                    <h5 style="margin:0;">Mailing Addresses</h5>
+                    <RadzenButton Text="Add Address" Icon="add" Size="ButtonSize.Small" ButtonStyle="ButtonStyle.Primary" Click="@OpenAddAddressSidebar" />
+                </div>
+                @if (details.Addresses?.Count > 0)
+                {
+                    <RadzenDataGrid Data="details.Addresses" TItem="OglesbyFDMembers.App.Services.MailingAddress" AllowPaging PageSize="10" RowHeight="34">
+                        <Columns>
+                            <RadzenDataGridColumn TItem="OglesbyFDMembers.App.Services.MailingAddress" Title="Address">
+                                <Template Context="a">
+                                    <div>@a.Line1</div>
+                                    @if (!string.IsNullOrWhiteSpace(a.Line2))
+                                    {
+                                        <div class="text-muted" style="font-size:0.9rem;">@a.Line2</div>
+                                    }
+                                    <div class="text-muted" style="font-size:0.9rem;">@string.Join(" ", new[] { a.City, a.State, a.PostalCode }.Where(s => !string.IsNullOrWhiteSpace(s)))</div>
+                                </Template>
+                            </RadzenDataGridColumn>
+                            <RadzenDataGridColumn TItem="OglesbyFDMembers.App.Services.MailingAddress" Title="Primary" Width="90px">
+                                <Template Context="a">
+                                    @if (a.IsPrimary)
+                                    {
+                                        <RadzenIcon Icon="check" Style="color: #2e7d32;" />
+                                    }
+                                    else
+                                    {
+                                        <RadzenIcon Icon="close" Style="color: #b00020;" />
+                                    }
+                                </Template>
+                            </RadzenDataGridColumn>
+                            <RadzenDataGridColumn TItem="OglesbyFDMembers.App.Services.MailingAddress" Title="Can Mail" Width="100px">
+                                <Template Context="a">
+                                    @if (a.IsValidForMail)
+                                    {
+                                        <RadzenIcon Icon="check" Style="color: #2e7d32;" />
+                                    }
+                                    else
+                                    {
+                                        <RadzenIcon Icon="close" Style="color: #b00020;" />
+                                    }
+                                </Template>
+                            </RadzenDataGridColumn>
+                            <RadzenDataGridColumn TItem="OglesbyFDMembers.App.Services.MailingAddress" Title="" Width="70px">
+                                <Template Context="a">
+                                    <RadzenSplitButton Icon="more_vert" ButtonStyle="ButtonStyle.Light" Size="ButtonSize.Small"
+                                                       Click="@(args => OnAddressAction(a, args?.Value?.ToString()))">
+                                        <ChildContent>
+                                            <RadzenSplitButtonItem Text="Make Primary" Value="makePrimary" Icon="star"
+                                                                   Disabled="@(a.IsPrimary || !a.IsValidForMail)" />
+                                            <RadzenSplitButtonItem Text="Mark Not In Service" Value="markInvalid" Icon="block"
+                                                                   Disabled="@(!a.IsValidForMail)" />
+                                            <RadzenSplitButtonItem Text="Delete Address" Value="delete" Icon="delete" />
+                                        </ChildContent>
+                                    </RadzenSplitButton>
+                                </Template>
+                            </RadzenDataGridColumn>
+                        </Columns>
+                    </RadzenDataGrid>
+                }
+                else
+                {
+                    <div class="text-muted">No mailing addresses on file.</div>
+                }
+            </RadzenCard>
+        </RadzenColumn>
+        <RadzenColumn Size="12" SizeSM="12" SizeMD="12">
+            <RadzenCard>
+                <div class="d-flex justify-content-between align-items-center" style="margin-top:0;">
+                    <h5 style="margin:0;">Payments</h5>
+                    <RadzenButton Text="Add Payment" Icon="add" Size="ButtonSize.Small" ButtonStyle="ButtonStyle.Primary" Click="@OpenAddPaymentDialog" />
+                </div>
+                @if (paymentsLoading)
+                {
+                    <div class="mt-2"><RadzenProgressBar ShowValue="false" Mode="ProgressBarMode.Indeterminate" Style="width: 240px;" /></div>
+                }
+                else if (payments == null || payments.Count == 0)
+                {
+                    <div class="text-muted">No payments recorded.</div>
+                }
+                else
+                {
+                    <RadzenDataGrid Data="payments" TItem="OglesbyFDMembers.App.Services.PaymentListItem" AllowPaging PageSize="10" RowHeight="34">
+                        <Columns>
+                            <RadzenDataGridColumn TItem="OglesbyFDMembers.App.Services.PaymentListItem" Title="Date" Width="160px">
+                                <Template Context="p">@p.PaidUtc.ToLocalTime().ToString("yyyy-MM-dd HH:mm")</Template>
+                            </RadzenDataGridColumn>
+                            <RadzenDataGridColumn TItem="OglesbyFDMembers.App.Services.PaymentListItem" Title="Applied To" Width="200px">
+                                <Template Context="p">@p.AppliedTo</Template>
+                            </RadzenDataGridColumn>
+                            <RadzenDataGridColumn TItem="OglesbyFDMembers.App.Services.PaymentListItem" Property="Amount" Title="Amount" Width="120px">
+                                <Template Context="p">@p.Amount.ToString("C")</Template>
+                            </RadzenDataGridColumn>
+                            <RadzenDataGridColumn TItem="OglesbyFDMembers.App.Services.PaymentListItem" Property="PaymentType" Title="Type" Width="100px" />
+                            <RadzenDataGridColumn TItem="OglesbyFDMembers.App.Services.PaymentListItem" Property="CheckNumber" Title="Check #" Width="120px" />
+                            <RadzenDataGridColumn TItem="OglesbyFDMembers.App.Services.PaymentListItem" Title="Donation" Width="90px">
+                                <Template Context="p">
+                                    @if (p.IsDonation)
+                                    {
+                                        <RadzenIcon Icon="check" Style="color: #2e7d32;" />
+                                    }
+                                </Template>
+                            </RadzenDataGridColumn>
+                            <RadzenDataGridColumn TItem="OglesbyFDMembers.App.Services.PaymentListItem" Property="Notes" Title="Notes" />
+                        </Columns>
+                    </RadzenDataGrid>
+                }
+            </RadzenCard>
+        </RadzenColumn>
+    </RadzenRow>
+}
+
+@code {
+    [Parameter]
+    public int id { get; set; }
+
+    private bool loading = true;
+    private OglesbyFDMembers.App.Services.PersonDetails? details;
+    private List<OglesbyFDMembers.App.Services.PaymentListItem> payments = new();
+    private bool paymentsLoading = false;
+
+    protected override async Task OnParametersSetAsync()
+    {
+        loading = true;
+        try
+        {
+            details = await PeopleSvc.GetDetailsAsync(id);
+            await LoadPaymentsAsync();
+        }
+        catch (Exception ex)
+        {
+            Notifications.Notify(new NotificationMessage
+            {
+                Severity = NotificationSeverity.Error,
+                Summary = "Error loading person",
+                Detail = ex.Message,
+                Duration = 5000
+            });
+        }
+        finally
+        {
+            loading = false;
+        }
+    }
+
+    private async Task RefreshAsync()
+    {
+        details = await PeopleSvc.GetDetailsAsync(id);
+        await LoadPaymentsAsync();
+        StateHasChanged();
+    }
+
+    private async Task LoadPaymentsAsync()
+    {
+        paymentsLoading = true;
+        try
+        {
+            payments = await PaymentSvc.ListByPersonAsync(id);
+        }
+        finally
+        {
+            paymentsLoading = false;
+        }
+    }
+
+    private async Task OnAddressAction(OglesbyFDMembers.App.Services.MailingAddress a, string? action)
+    {
+        try
+        {
+            switch (action)
+            {
+                case "makePrimary":
+                    await PeopleSvc.MakeAddressPrimaryAsync(id, a.Id);
+                    Notifications.Notify(new NotificationMessage
+                    {
+                        Severity = NotificationSeverity.Success,
+                        Summary = "Primary updated",
+                        Detail = "Address set as primary.",
+                        Duration = 3000
+                    });
+                    break;
+                case "markInvalid":
+                    {
+                        var confirm = await Dialogs.Confirm("Mark this address as not in service? If it is primary, the next valid address will be promoted.", "Confirm", new ConfirmOptions { OkButtonText = "Yes", CancelButtonText = "No" });
+                        if (confirm == true)
+                        {
+                            await PeopleSvc.MarkAddressNotInServiceAsync(id, a.Id);
+                            Notifications.Notify(new NotificationMessage
+                            {
+                                Severity = NotificationSeverity.Success,
+                                Summary = "Updated",
+                                Detail = "Address marked not in service.",
+                                Duration = 3000
+                            });
+                        }
+                    }
+                    break;
+                case "delete":
+                    {
+                        var confirm = await Dialogs.Confirm("Delete this address? If it is primary, the next valid address will be promoted.", "Delete Address", new ConfirmOptions { OkButtonText = "Delete", CancelButtonText = "Cancel" });
+                        if (confirm == true)
+                        {
+                            await PeopleSvc.DeleteAddressAsync(id, a.Id);
+                            Notifications.Notify(new NotificationMessage
+                            {
+                                Severity = NotificationSeverity.Success,
+                                Summary = "Deleted",
+                                Detail = "Address removed.",
+                                Duration = 3000
+                            });
+                        }
+                    }
+                    break;
+            }
+
+            await RefreshAsync();
+        }
+        catch (Exception ex)
+        {
+            Notifications.Notify(new NotificationMessage
+            {
+                Severity = NotificationSeverity.Error,
+                Summary = "Address action failed",
+                Detail = ex.Message,
+                Duration = 5000
+            });
+        }
+    }
+
+    private async Task OpenAddAddressSidebar()
+    {
+        var result = await Dialogs.OpenAsync<AddMailingAddressSidebar>(
+            "Add Mailing Address",
+            new Dictionary<string, object?>
+            {
+                ["PersonId"] = id
+            },
+            new DialogOptions
+            {
+                CloseDialogOnOverlayClick = true,
+                ShowClose = true,
+                Resizable = false,
+                Draggable = false,
+                Style = "width: 520px; max-width: 95vw;"
+            });
+
+        if (result is bool ok && ok)
+        {
+            await RefreshAsync();
+        }
+    }
+
+    private async Task OpenAddPaymentDialog()
+    {
+        var result = await Dialogs.OpenAsync<OglesbyFDMembers.App.Components.Payments.AddPaymentDialog>(
+            "Add Payment",
+            new Dictionary<string, object?>
+            {
+                ["PersonId"] = id
+            },
+            new DialogOptions
+            {
+                CloseDialogOnOverlayClick = true,
+                ShowClose = true,
+                Resizable = false,
+                Draggable = false,
+                Style = "width: 520px; max-width: 95vw;"
+            });
+
+        if (result is bool ok && ok)
+        {
+            await RefreshAsync();
+        }
+    }
+
+    private async Task OpenAddPropertyDialog()
+    {
+        var result = await Dialogs.OpenAsync<OglesbyFDMembers.App.Components.People.AddPropertyDialog>(
+            "Add Property",
+            new Dictionary<string, object?>
+            {
+                ["PersonId"] = id
+            },
+            new DialogOptions
+            {
+                CloseDialogOnOverlayClick = true,
+                ShowClose = true,
+                Resizable = false,
+                Draggable = false,
+                Style = "width: 520px; max-width: 95vw;"
+            });
+
+        if (result is bool ok && ok)
+        {
+            await RefreshAsync();
+        }
+    }
+}

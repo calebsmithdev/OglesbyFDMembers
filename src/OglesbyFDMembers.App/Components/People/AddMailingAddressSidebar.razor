@@ -1,0 +1,99 @@
+@using System.ComponentModel.DataAnnotations
+@inject Radzen.DialogService Dialogs
+@inject Radzen.NotificationService Notifications
+@inject OglesbyFDMembers.App.Services.PeopleService PeopleSvc
+
+<div style="padding: 1rem;">
+    <h4 style="margin-top:0;">Add Mailing Address</h4>
+
+    <RadzenTemplateForm TItem="AddAddressModel" Data="model" Submit="HandleValidSubmit">
+        <div class="row g-2">
+            <div class="col-12">
+                <RadzenTextBox @bind-Value="model.Line1" Name="Line1" Placeholder="Address line 1" Style="width:100%" />
+                <RadzenRequiredValidator Component="Line1" Text="Line 1 is required" />
+            </div>
+            <div class="col-12">
+                <RadzenTextBox @bind-Value="model.Line2" Name="Line2" Placeholder="Address line 2" Style="width:100%" />
+            </div>
+            <div class="col-6">
+                <RadzenTextBox @bind-Value="model.City" Name="City" Placeholder="City" Style="width:100%" />
+            </div>
+            <div class="col-3">
+                <RadzenTextBox @bind-Value="model.State" Name="State" Placeholder="State" Style="width:100%" />
+            </div>
+            <div class="col-3">
+                <RadzenTextBox @bind-Value="model.PostalCode" Name="PostalCode" Placeholder="Postal code" Style="width:100%" />
+            </div>
+            <div class="col-12">
+                <RadzenCheckBox @bind-Value="model.IsValidForMail" TriState="false" />
+                <label style="margin-left: .5rem;">Valid for mail</label>
+            </div>
+            <div class="col-12">
+                <RadzenCheckBox @bind-Value="model.IsPrimary" TriState="false" Disabled="@(!model.IsValidForMail)" />
+                <label style="margin-left: .5rem;">Make primary</label>
+            </div>
+        </div>
+
+        <div class="d-flex justify-content-end" style="margin-top: 1rem; gap: .5rem;">
+            <RadzenButton Text="Cancel" ButtonStyle="ButtonStyle.Light" Click="@(() => Dialogs.Close(false))" />
+            <RadzenButton Text="Save" Icon="save" ButtonStyle="ButtonStyle.Primary" Type="ButtonType.Submit" />
+        </div>
+    </RadzenTemplateForm>
+</div>
+
+@code {
+    [Parameter]
+    public int PersonId { get; set; }
+
+    private AddAddressModel model = new()
+    {
+        IsValidForMail = true,
+        IsPrimary = false
+    };
+
+    private async Task HandleValidSubmit(AddAddressModel _)
+    {
+        try
+        {
+            await PeopleSvc.AddAddressAsync(
+                PersonId,
+                model.Line1,
+                model.Line2,
+                model.City,
+                model.State,
+                model.PostalCode,
+                model.IsPrimary,
+                model.IsValidForMail);
+
+            Notifications.Notify(new NotificationMessage
+            {
+                Severity = NotificationSeverity.Success,
+                Summary = "Address added",
+                Duration = 3000
+            });
+
+            Dialogs.Close(true);
+        }
+        catch (Exception ex)
+        {
+            Notifications.Notify(new NotificationMessage
+            {
+                Severity = NotificationSeverity.Error,
+                Summary = "Failed to add address",
+                Detail = ex.Message,
+                Duration = 5000
+            });
+        }
+    }
+
+    private class AddAddressModel
+    {
+        [Required, MaxLength(200)] public string Line1 { get; set; } = string.Empty;
+        [MaxLength(200)] public string? Line2 { get; set; }
+        [MaxLength(100)] public string? City { get; set; }
+        [MaxLength(64)] public string? State { get; set; }
+        [MaxLength(32)] public string? PostalCode { get; set; }
+        public bool IsPrimary { get; set; }
+        public bool IsValidForMail { get; set; } = true;
+    }
+}

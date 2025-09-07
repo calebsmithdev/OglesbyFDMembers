@@ -125,9 +125,14 @@ namespace OglesbyFDMembers.Data.Migrations
                     b.Property<int>("PersonId")
                         .HasColumnType("INTEGER");
 
+                    b.Property<int?>("TargetPropertyId")
+                        .HasColumnType("INTEGER");
+
                     b.HasKey("Id");
 
                     b.HasIndex("PersonId");
+
+                    b.HasIndex("TargetPropertyId");
 
                     b.ToTable("Payments", (string)null);
                 });
@@ -370,7 +375,14 @@ namespace OglesbyFDMembers.Data.Migrations
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
+                    b.HasOne("OglesbyFDMembers.Domain.Entities.Property", "TargetProperty")
+                        .WithMany()
+                        .HasForeignKey("TargetPropertyId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
                     b.Navigation("Person");
+
+                    b.Navigation("TargetProperty");
                 });
 
             modelBuilder.Entity("OglesbyFDMembers.Domain.Entities.PaymentAllocation", b =>

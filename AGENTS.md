@@ -135,3 +135,8 @@ Show a method that runs `VACUUM INTO` to a timestamped path, with try/catch and 
 * Unit tests pass; at least one PDF/labels export verified.
 * Rerunning the action causes no duplicates or data corruption.
 * Logging and basic error messages in place.
+
+## Build Notes
+
+* All `dotnet build` tasks need to run with escalated priviledges.
+* Do not create migrations in code by hand. You should prompt the user to run `dotnet ef migrations add` instead.

@@ -40,7 +40,14 @@ public class Payment
     [MaxLength(500)]
     public string? Notes { get; set; }
 
+    /// <summary>
+    /// When set, denotes this payment targets a single property.
+    /// When null and not a donation, allocation is treated as a split across properties.
+    /// </summary>
+    public int? TargetPropertyId { get; set; }
+
     // Navigation
     public Person? Person { get; set; }
+    public Property? TargetProperty { get; set; }
     public ICollection<PaymentAllocation> Allocations { get; set; } = new List<PaymentAllocation>();
 }
