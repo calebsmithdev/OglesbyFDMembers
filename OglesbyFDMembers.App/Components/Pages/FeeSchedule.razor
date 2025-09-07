@@ -8,7 +8,7 @@
 
 <h1>Fee Schedule</h1>
 
-<RadzenTemplateForm Data="@model" Submit="@((Vm args) => { Save(args); })">
+<RadzenTemplateForm TItem="Vm" Data="@model" Submit="@(async (Vm args) => await Save(args))">
     <RadzenRow Wrap="FlexWrap.Wrap" Gap="1rem">
         <RadzenColumn Size="12" SizeSM="6">
             <RadzenRow Wrap="FlexWrap.Wrap" Gap="1rem">
@@ -92,6 +92,8 @@
         try
         {
             await FeeSvc.SetAsync(args.Year, args.Amount);
+            // Refresh the list so the new/updated row appears immediately
+            await LoadList();
             Notifications.Notify(new NotificationMessage
             {
                 Severity = NotificationSeverity.Success,
@@ -99,9 +101,6 @@
                 Detail = $"Fee for {args.Year} set to {args.Amount:C}.",
                 Duration = 3000
             });
-            
-            // Convert POST to GET to avoid resubmit on refresh (PRG pattern)
-            Nav.NavigateTo("/fee-schedule", replace: true);
         }
         catch (Exception ex)
         {
