@@ -46,10 +46,10 @@ Keep the proven schema but expressed as EF entities:
 
 ```
 src/
-  Oglesby.Domain/     // POCOs + validation
-  Oglesby.Data/       // DbContext, configurations, migrations, seed
-  Oglesby.App/        // Blazor UI (Server or Hybrid), pages, components
-  Oglesby.Tools/      // importers, data repair scripts (console)
+  OglesbyFDMembers.Domain/     // POCOs + validation
+  OglesbyFDMembers.Data/       // DbContext, configurations, migrations, seed
+  OglesbyFDMembers.App/        // Blazor UI (Server or Hybrid), pages, components
+  OglesbyFDMembers.Tools/      // importers, data repair scripts (console)
 ```
 
 **Connection** (SQLite): `Data Source=C:\\OglesbyFD\\Data\\oglesby.db;Cache=Shared;Foreign Keys=True;`
