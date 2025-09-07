@@ -19,6 +19,16 @@ public class IntakeService
         _db = db;
     }
 
+    public async Task<decimal> GetFeeAmountAsync(int? year = null, CancellationToken ct = default)
+    {
+        var y = year ?? DateTime.UtcNow.Year;
+        var fee = await _db.FeeSchedules
+            .Where(f => f.Year == y)
+            .Select(f => f.AmountPerProperty)
+            .FirstOrDefaultAsync(ct);
+        return fee; // returns 0 if not configured
+    }
+
     public async Task<int> CreateAsync(IntakeRequest request, CancellationToken ct = default)
     {
         await using var tx = await _db.Database.BeginTransactionAsync(ct);
@@ -52,19 +62,29 @@ public class IntakeService
         _db.PersonAddresses.Add(address);
         await _db.SaveChangesAsync(ct);
 
-        // Property (find by parcel if exists)
-        Property property;
-        var parcel = request.ParcelNumber.Trim();
-        property = await _db.Properties.FirstOrDefaultAsync(p => p.ParcelNumber == parcel, ct)
-                   ?? new Property
-                   {
-                       ParcelNumber = parcel,
-                       SitusAddress = (request.PropertySameAsAddress ? request.AddressLine1 : request.PropertySitusAddress)!.Trim(),
-                       Active = true,
-                       CreatedUtc = DateTime.UtcNow
-                   };
-        if (property.Id == 0)
+        // Property (find by address match if exists)
+        var propAddr1 = (request.PropertySameAsAddress ? request.AddressLine1 : request.PropertyAddressLine1)!.Trim();
+        var propAddr2 = (request.PropertySameAsAddress ? request.AddressLine2 : request.PropertyAddressLine2)?.Trim();
+        var propCity = (request.PropertySameAsAddress ? request.City : request.PropertyCity)?.Trim();
+        var propState = (request.PropertySameAsAddress ? request.State : request.PropertyState)?.Trim();
+        var propZip = (request.PropertySameAsAddress ? request.PostalCode : request.PropertyPostalCode)?.Trim();
+
+        var property = await _db.Properties.FirstOrDefaultAsync(
+            p => p.AddressLine1 == propAddr1 && p.AddressLine2 == propAddr2 && p.City == propCity && p.State == propState && p.Zip == propZip,
+            ct);
+
+        if (property == null)
         {
+            property = new Property
+            {
+                AddressLine1 = propAddr1,
+                AddressLine2 = string.IsNullOrWhiteSpace(propAddr2) ? null : propAddr2,
+                City = string.IsNullOrWhiteSpace(propCity) ? null : propCity,
+                State = string.IsNullOrWhiteSpace(propState) ? null : propState,
+                Zip = string.IsNullOrWhiteSpace(propZip) ? null : propZip,
+                Active = true,
+                CreatedUtc = DateTime.UtcNow
+            };
             _db.Properties.Add(property);
             await _db.SaveChangesAsync(ct);
         }
@@ -90,7 +110,7 @@ public class IntakeService
             {
                 PersonId = person.Id,
                 PaymentType = request.PaymentType ?? PaymentType.Cash,
-                Amount = fee,
+                Amount = request.PaymentAmount ?? fee,
                 PaidUtc = request.PaidDateUtc ?? DateTime.UtcNow,
                 CheckNumber = string.IsNullOrWhiteSpace(request.CheckNumber) ? null : request.CheckNumber.Trim(),
                 IsDonation = false,
@@ -124,12 +144,16 @@ public class IntakeRequest
 
     // Property
     public bool PropertySameAsAddress { get; set; } = true;
-    [Required, MaxLength(64)] public string ParcelNumber { get; set; } = string.Empty;
-    [MaxLength(200)] public string? PropertySitusAddress { get; set; }
+    [MaxLength(200)] public string? PropertyAddressLine1 { get; set; }
+    [MaxLength(200)] public string? PropertyAddressLine2 { get; set; }
+    [MaxLength(100)] public string? PropertyCity { get; set; }
+    [MaxLength(64)] public string? PropertyState { get; set; }
+    [MaxLength(32)] public string? PropertyPostalCode { get; set; }
 
     // Payment
     public bool HasPaid { get; set; }
     public PaymentType? PaymentType { get; set; }
+    public decimal? PaymentAmount { get; set; }
     public string? CheckNumber { get; set; }
     public DateTime? PaidDateUtc { get; set; }
     public string? Notes { get; set; }
@@ -137,4 +161,3 @@ public class IntakeRequest
     // Optional year override for fee lookup
     public int? AssessmentYear { get; set; }
 }
-

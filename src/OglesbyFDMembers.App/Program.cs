@@ -17,6 +17,7 @@ builder.Services.AddSqliteDb(builder.Configuration, builder.Environment);
 // App services
 builder.Services.AddScoped<OglesbyFDMembers.App.Services.IntakeService>();
 builder.Services.AddScoped<OglesbyFDMembers.App.Services.FeeScheduleService>();
+builder.Services.AddScoped<OglesbyFDMembers.App.Services.PeopleService>();
 
 var app = builder.Build();
 

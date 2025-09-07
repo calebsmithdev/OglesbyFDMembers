@@ -64,11 +64,6 @@
         <div class="col-12 mt-3">
             <h4>Property</h4>
         </div>
-        <div class="col-md-4">
-            <label class="form-label">Parcel Number</label>
-            <InputText class="form-control" @bind-Value="model.ParcelNumber" />
-            <ValidationMessage For="() => model.ParcelNumber" />
-        </div>
         <div class="col-md-8 d-flex align-items-end">
             <div class="form-check">
                 <InputCheckbox class="form-check-input" @bind-Value="model.PropertySameAsAddress" />
@@ -105,12 +100,19 @@
         </div>
         <div class="col-md-3">
             <div class="form-check">
-                <InputCheckbox class="form-check-input" @bind-Value="model.HasPaid" />
-                <label class="form-check-label">Paid</label>
+                <InputCheckbox class="form-check-input"
+                               Value="model.HasPaid"
+                               ValueChanged="OnHasPaidChanged"
+                               ValueExpression="() => model.HasPaid" />
+                <label class="form-check-label">Add a payment</label>
             </div>
         </div>
         @if (model.HasPaid)
         {
+            <div class="col-md-3">
+                <label class="form-label">Amount</label>
+                <InputNumber class="form-control" @bind-Value="model.PaymentAmount" />
+            </div>
             <div class="col-md-3">
                 <label class="form-label">Payment Type</label>
                 <InputSelect class="form-select" @bind-Value="model.PaymentType">
@@ -170,9 +172,13 @@
             State = model.State,
             PostalCode = model.PostalCode,
             PropertySameAsAddress = model.PropertySameAsAddress,
-            ParcelNumber = model.ParcelNumber,
-            PropertySitusAddress = model.PropertySameAsAddress ? null : ComposePropertySitusAddress(),
+            PropertyAddressLine1 = model.PropertySameAsAddress ? null : model.PropertyAddressLine1,
+            PropertyAddressLine2 = model.PropertySameAsAddress ? null : model.PropertyAddressLine2,
+            PropertyCity = model.PropertySameAsAddress ? null : model.PropertyCity,
+            PropertyState = model.PropertySameAsAddress ? null : model.PropertyState,
+            PropertyPostalCode = model.PropertySameAsAddress ? null : model.PropertyPostalCode,
             HasPaid = model.HasPaid,
+            PaymentAmount = model.PaymentAmount,
             PaymentType = model.PaymentType,
             CheckNumber = model.CheckNumber,
             PaidDateUtc = model.PaidDate?.ToUniversalTime(),
@@ -209,6 +215,29 @@
         model = new IntakeVm();
     }
 
+    private async Task OnHasPaidChanged(bool value)
+    {
+        model.HasPaid = value;
+        if (value && (model.PaymentAmount is null || model.PaymentAmount == 0))
+        {
+            try
+            {
+                var amount = await IntakeSvc.GetFeeAmountAsync(model.AssessmentYear);
+                model.PaymentAmount = amount;
+            }
+            catch (Exception ex)
+            {
+                Notifications.Notify(new Radzen.NotificationMessage
+                {
+                    Severity = Radzen.NotificationSeverity.Warning,
+                    Summary = "Fee Lookup Failed",
+                    Detail = ex.Message,
+                    Duration = 4000
+                });
+            }
+        }
+    }
+
     private string? ComposePropertySitusAddress()
     {
         var parts = new List<string>();
@@ -243,7 +272,6 @@
 
         // Property
         public bool PropertySameAsAddress { get; set; } = true;
-        [Required, MaxLength(64)] public string ParcelNumber { get; set; } = string.Empty;
         [MaxLength(200)] public string? PropertyAddressLine1 { get; set; }
         [MaxLength(200)] public string? PropertyAddressLine2 { get; set; }
         [MaxLength(100)] public string? PropertyCity { get; set; }
@@ -252,6 +280,7 @@
 
         // Payment
         public bool HasPaid { get; set; }
+        public decimal? PaymentAmount { get; set; }
         public PaymentType PaymentType { get; set; } = PaymentType.Cash;
         public string? CheckNumber { get; set; }
         public DateTime? PaidDate { get; set; }

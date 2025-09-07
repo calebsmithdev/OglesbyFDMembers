@@ -2,7 +2,6 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
-using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using OglesbyFDMembers.Data;
 
@@ -11,11 +10,9 @@ using OglesbyFDMembers.Data;
 namespace OglesbyFDMembers.Data.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20250907033515_Initial")]
-    partial class Initial
+    partial class AppDbContextModelSnapshot : ModelSnapshot
     {
-        /// <inheritdoc />
-        protected override void BuildTargetModel(ModelBuilder modelBuilder)
+        protected override void BuildModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder.HasAnnotation("ProductVersion", "9.0.8");
@@ -273,17 +270,28 @@ namespace OglesbyFDMembers.Data.Migrations
                     b.Property<bool>("Active")
                         .HasColumnType("INTEGER");
 
+                    b.Property<string>("AddressLine1")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("AddressLine2")
+                        .HasMaxLength(200)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("City")
+                        .HasMaxLength(100)
+                        .HasColumnType("TEXT");
+
                     b.Property<DateTime>("CreatedUtc")
                         .HasColumnType("TEXT");
 
-                    b.Property<string>("ParcelNumber")
-                        .IsRequired()
+                    b.Property<string>("State")
                         .HasMaxLength(64)
                         .HasColumnType("TEXT");
 
-                    b.Property<string>("SitusAddress")
-                        .IsRequired()
-                        .HasMaxLength(200)
+                    b.Property<string>("Zip")
+                        .HasMaxLength(32)
                         .HasColumnType("TEXT");
 
                     b.HasKey("Id");

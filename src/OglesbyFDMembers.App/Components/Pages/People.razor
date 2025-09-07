@@ -1,0 +1,95 @@
+@page "/people"
+@using OglesbyFDMembers.App.Services
+@inject PeopleService PeopleSvc
+@inject Radzen.NotificationService Notifications
+
+<h1>People</h1>
+
+<RadzenRow Wrap="FlexWrap.Wrap" Gap="1rem" Style="margin-bottom: 1rem;">
+    <RadzenColumn Size="12" SizeSM="8" SizeMD="6" SizeLG="4">
+        <RadzenFormField Text="Year" Variant="Variant.Outlined" Style="width:100%">
+            <ChildContent>
+                <RadzenDropDown Data="years" @bind-Value="year" TValue="int" Style="width:100%"
+                                 Placeholder="Select year" Change="@(async _ => await LoadAsync())"/>
+            </ChildContent>
+        </RadzenFormField>
+    </RadzenColumn>
+    <RadzenColumn Size="12" SizeSM="8" SizeMD="6" SizeLG="4">
+        <RadzenFormField Text="Search" Variant="Variant.Outlined" Style="width:100%">
+            <ChildContent>
+                <RadzenTextBox @bind-Value="search" Style="width:100%" Placeholder="Name, email, phone, address" Change="@(async _ => await LoadAsync())" />
+            </ChildContent>
+        </RadzenFormField>
+    </RadzenColumn>
+</RadzenRow>
+
+<RadzenDataGrid @ref="grid" Data="people" TItem="PersonListItem" RowHeight="38" AllowSorting AllowPaging AllowFiltering="false" PageSize="25">
+    <Columns>
+        <RadzenDataGridColumn TItem="PersonListItem" Property="FullName" Title="Name" Width="220px" />
+        <RadzenDataGridColumn TItem="PersonListItem" Property="Address" Title="Address" Width="340px" />
+        <RadzenDataGridColumn TItem="PersonListItem" Property="Phone" Title="Phone" Width="140px" />
+        <RadzenDataGridColumn TItem="PersonListItem" Property="Email" Title="Email" Width="220px" />
+        <RadzenDataGridColumn TItem="PersonListItem" Title="Payment Status">
+            <Template Context="item">
+                @PaymentStatusTemplate(item)
+            </Template>
+        </RadzenDataGridColumn>
+    </Columns>
+</RadzenDataGrid>
+
+@code {
+    private RadzenDataGrid<PersonListItem>? grid;
+    private List<PersonListItem> people = new();
+    private List<int> years = new();
+    private int year;
+    private string? search;
+
+    protected override async Task OnInitializedAsync()
+    {
+        years = await PeopleSvc.GetAvailableYearsAsync();
+        year = years.FirstOrDefault();
+        if (year == 0)
+        {
+            year = DateTime.UtcNow.Year;
+        }
+        await LoadAsync();
+    }
+
+    private async Task LoadAsync()
+    {
+        people = await PeopleSvc.ListAsync(year, search);
+        await InvokeAsync(StateHasChanged);
+    }
+
+    private RenderFragment PaymentStatusTemplate(PersonListItem item) => builder =>
+    {
+        var seq = 0;
+        // Paid amount
+        builder.OpenElement(seq++, "span");
+        builder.AddContent(seq++, $"{item.AmountPaid:C} ");
+        builder.CloseElement();
+
+        // Parentheses show AmountDue as a negative e.g. (-$20.00), in red.
+        var style = "color:#b00020;font-weight:600"; // material red tone
+        builder.OpenElement(seq++, "span");
+        builder.AddAttribute(seq++, "style", style);
+        builder.AddContent(seq++, $"(-{item.AmountDue:C})");
+        builder.CloseElement();
+
+        // Optional status label
+        var label = item.Status switch
+        {
+            PaymentStatus.Paid => " Paid",
+            PaymentStatus.Partial => " Partial",
+            PaymentStatus.Unpaid => " Unpaid",
+            _ => null
+        };
+        if (!string.IsNullOrWhiteSpace(label))
+        {
+            builder.OpenElement(seq++, "span");
+            builder.AddAttribute(seq++, "style", "margin-left:6px;color:#666;font-size:0.85rem");
+            builder.AddContent(seq++, label);
+            builder.CloseElement();
+        }
+    };
+}

@@ -1,12 +1,12 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "OglesbyFDMembers.App", "OglesbyFDMembers.App\OglesbyFDMembers.App.csproj", "{99F9495A-38A7-409A-8369-200EE6333923}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "OglesbyFDMembers.App", "src\OglesbyFDMembers.App\OglesbyFDMembers.App.csproj", "{99F9495A-38A7-409A-8369-200EE6333923}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "OglesbyFDMembers.Domain", "OglesbyFDMembers.Domain\OglesbyFDMembers.Domain.csproj", "{B1BF12FC-CC45-47AC-A21C-A2A32F652779}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "OglesbyFDMembers.Domain", "src\OglesbyFDMembers.Domain\OglesbyFDMembers.Domain.csproj", "{B1BF12FC-CC45-47AC-A21C-A2A32F652779}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "OglesbyFDMembers.Data", "OglesbyFDMembers.Data\OglesbyFDMembers.Data.csproj", "{6EAACF3E-CCA2-496B-944E-1A701C4272DB}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "OglesbyFDMembers.Data", "src\OglesbyFDMembers.Data\OglesbyFDMembers.Data.csproj", "{6EAACF3E-CCA2-496B-944E-1A701C4272DB}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "OglesbyFDMembers.Tools", "OglesbyFDMembers.Tools\OglesbyFDMembers.Tools.csproj", "{CBB4A806-589F-4668-9773-44E98D4B093F}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "OglesbyFDMembers.Tools", "src\OglesbyFDMembers.Tools\OglesbyFDMembers.Tools.csproj", "{CBB4A806-589F-4668-9773-44E98D4B093F}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

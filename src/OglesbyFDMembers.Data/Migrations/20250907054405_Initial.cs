@@ -49,8 +49,11 @@ namespace OglesbyFDMembers.Data.Migrations
                 {
                     Id = table.Column<int>(type: "INTEGER", nullable: false)
                         .Annotation("Sqlite:Autoincrement", true),
-                    SitusAddress = table.Column<string>(type: "TEXT", maxLength: 200, nullable: false),
-                    ParcelNumber = table.Column<string>(type: "TEXT", maxLength: 64, nullable: false),
+                    AddressLine1 = table.Column<string>(type: "TEXT", maxLength: 200, nullable: false),
+                    AddressLine2 = table.Column<string>(type: "TEXT", maxLength: 200, nullable: true),
+                    City = table.Column<string>(type: "TEXT", maxLength: 100, nullable: true),
+                    State = table.Column<string>(type: "TEXT", maxLength: 64, nullable: true),
+                    Zip = table.Column<string>(type: "TEXT", maxLength: 32, nullable: true),
                     Active = table.Column<bool>(type: "INTEGER", nullable: false),
                     CreatedUtc = table.Column<DateTime>(type: "TEXT", nullable: false)
                 },

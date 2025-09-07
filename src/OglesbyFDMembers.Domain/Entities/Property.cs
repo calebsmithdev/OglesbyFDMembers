@@ -18,11 +18,19 @@ public class Property
 
     [Required]
     [MaxLength(200)]
-    public string SitusAddress { get; set; } = string.Empty;
+    public string AddressLine1 { get; set; } = string.Empty;
 
-    [Required]
+    [MaxLength(200)]
+    public string? AddressLine2 { get; set; }
+
+    [MaxLength(100)]
+    public string? City { get; set; }
+
     [MaxLength(64)]
-    public string ParcelNumber { get; set; } = string.Empty;
+    public string? State { get; set; }
+
+    [MaxLength(32)]
+    public string? Zip { get; set; }
 
     public bool Active { get; set; } = true;
 
