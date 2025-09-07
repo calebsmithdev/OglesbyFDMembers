@@ -7,6 +7,7 @@ using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
 using OglesbyFDMembers.Data;
 using OglesbyFDMembers.Domain.Entities;
+using ClosedXML.Excel;
 
 namespace OglesbyFDMembers.App.Services;
 
@@ -17,6 +18,243 @@ public class PeopleService
     public PeopleService(AppDbContext db)
     {
         _db = db;
+    }
+
+    // Export row types
+    public class MailingExportRow
+    {
+        public int PersonId { get; set; }
+        public string Name { get; set; } = string.Empty;
+        public string? Line1 { get; set; }
+        public string? Line2 { get; set; }
+        public string? City { get; set; }
+        public string? State { get; set; }
+        public string? PostalCode { get; set; }
+    }
+
+    public class MemberExportRow
+    {
+        public int PersonId { get; set; }
+        public string FirstName { get; set; } = string.Empty;
+        public string LastName { get; set; } = string.Empty;
+        public string PropertyAddress { get; set; } = string.Empty;
+        public string? Email { get; set; }
+        public string? Phone { get; set; }
+        public string Paid { get; set; } = string.Empty; // "Partial" | "Full" | ""
+    }
+
+    /// <summary>
+    /// Returns one row per visible person, with their primary mailing address city/state/postal.
+    /// Matches People page filtering (year + search).
+    /// </summary>
+    public async Task<List<MailingExportRow>> ExportMailingAsync(int year, string? search = null, CancellationToken ct = default)
+    {
+        var today = DateTime.UtcNow.Date;
+
+        // Base query: people + primary mailing address (latest), and current ownerships to support property-address search
+        var baseQuery = from p in _db.People.AsNoTracking()
+                        join a in _db.PersonAddresses.AsNoTracking().Where(a => a.IsPrimary) on p.Id equals a.PersonId into pa
+                        from primary in pa.OrderByDescending(x => x.CreatedUtc).Take(1).DefaultIfEmpty()
+                        select new
+                        {
+                            p.Id,
+                            p.FirstName,
+                            p.LastName,
+                            p.Email,
+                            p.Phone,
+                            Line1 = primary != null ? primary.Line1 : null,
+                            Line2 = primary != null ? primary.Line2 : null,
+                            City = primary != null ? primary.City : null,
+                            State = primary != null ? primary.State : null,
+                            PostalCode = primary != null ? primary.PostalCode : null
+                        };
+
+        if (!string.IsNullOrWhiteSpace(search))
+        {
+            var s = search.Trim().ToLower();
+
+            var nameOrMailFilter = baseQuery.Where(x =>
+                ((x.FirstName + " " + x.LastName).ToLower().Contains(s)) ||
+                (x.Email != null && x.Email.ToLower().Contains(s)) ||
+                (x.Phone != null && x.Phone.ToLower().Contains(s)) ||
+                (x.Line1 != null && x.Line1.ToLower().Contains(s)) ||
+                (x.Line2 != null && x.Line2.ToLower().Contains(s)) ||
+                (x.City != null && x.City.ToLower().Contains(s)) ||
+                (x.State != null && x.State.ToLower().Contains(s)) ||
+                (x.PostalCode != null && x.PostalCode.ToLower().Contains(s))
+            );
+
+            var propertyMatches = await (from o in _db.Ownerships.AsNoTracking()
+                                         join pr in _db.Properties.AsNoTracking() on o.PropertyId equals pr.Id
+                                         where o.StartDate <= today && (o.EndDate == null || o.EndDate >= today)
+                                         where (pr.AddressLine1 != null && EF.Functions.Like(pr.AddressLine1.ToLower(), $"%{s}%"))
+                                               || (pr.AddressLine2 != null && EF.Functions.Like(pr.AddressLine2.ToLower(), $"%{s}%"))
+                                               || (pr.City != null && EF.Functions.Like(pr.City.ToLower(), $"%{s}%"))
+                                               || (pr.State != null && EF.Functions.Like(pr.State.ToLower(), $"%{s}%"))
+                                               || (pr.Zip != null && EF.Functions.Like(pr.Zip.ToLower(), $"%{s}%"))
+                                         select o.PersonId)
+                .Distinct()
+                .ToListAsync(ct);
+
+            baseQuery = nameOrMailFilter
+                .Union(baseQuery.Where(x => propertyMatches.Contains(x.Id)));
+        }
+
+        var data = await baseQuery
+            .OrderBy(x => x.LastName)
+            .ThenBy(x => x.FirstName)
+            .ToListAsync(ct);
+
+        return data.Select(x => new MailingExportRow
+        {
+            PersonId = x.Id,
+            Name = (x.FirstName + " " + x.LastName).Trim(),
+            Line1 = x.Line1,
+            Line2 = x.Line2,
+            City = x.City,
+            State = x.State,
+            PostalCode = x.PostalCode
+        }).ToList();
+    }
+
+    /// <summary>
+    /// Returns one row per (person, owned property) visible on the People page filters.
+    /// Includes Paid status per property for the selected year: "Full", "Partial", or "" if none.
+    /// </summary>
+    public async Task<List<MemberExportRow>> ExportMemberAsync(int year, string? search = null, CancellationToken ct = default)
+    {
+        var today = DateTime.UtcNow.Date;
+
+        // Determine visible person ids using the same filter as ListAsync
+        var visible = await ListAsync(year, search, ct);
+        var personIds = visible.Select(v => v.PersonId).ToList();
+        if (personIds.Count == 0) return new();
+
+        // Get current ownerships and properties for these people
+        var rows = await (from o in _db.Ownerships.AsNoTracking()
+                          join pr in _db.Properties.AsNoTracking() on o.PropertyId equals pr.Id
+                          join p in _db.People.AsNoTracking() on o.PersonId equals p.Id
+                          where personIds.Contains(o.PersonId)
+                                && o.StartDate <= today && (o.EndDate == null || o.EndDate >= today)
+                          select new
+                          {
+                              p.Id,
+                              p.FirstName,
+                              p.LastName,
+                              p.Email,
+                              p.Phone,
+                              PropertyId = pr.Id,
+                              pr.AddressLine1,
+                              pr.AddressLine2,
+                              pr.City,
+                              pr.State,
+                              pr.Zip
+                          })
+            .OrderBy(x => x.LastName).ThenBy(x => x.FirstName).ThenBy(x => x.AddressLine1).ThenBy(x => x.City)
+            .ToListAsync(ct);
+
+        var propertyIds = rows.Select(r => r.PropertyId).Distinct().ToList();
+        var assess = await _db.Assessments.AsNoTracking()
+            .Where(a => a.Year == year && propertyIds.Contains(a.PropertyId))
+            .GroupBy(a => a.PropertyId)
+            .Select(g => new { PropertyId = g.Key, AmountPaid = g.Sum(x => x.AmountPaid), AmountDue = g.Sum(x => x.AmountDue) })
+            .ToListAsync(ct);
+        var assessDict = assess.ToDictionary(x => x.PropertyId, x => x);
+
+        var result = new List<MemberExportRow>(rows.Count);
+        foreach (var r in rows)
+        {
+            var address = FormatAddress(r.AddressLine1, r.AddressLine2, r.City, r.State, r.Zip) ?? string.Empty;
+            string paidLabel = string.Empty;
+            if (assessDict.TryGetValue(r.PropertyId, out var s))
+            {
+                var balance = s.AmountDue - s.AmountPaid;
+                if (s.AmountPaid <= 0)
+                {
+                    paidLabel = string.Empty;
+                }
+                else if (balance <= 0)
+                {
+                    paidLabel = "Full";
+                }
+                else
+                {
+                    paidLabel = "Partial";
+                }
+            }
+
+            result.Add(new MemberExportRow
+            {
+                PersonId = r.Id,
+                FirstName = r.FirstName,
+                LastName = r.LastName,
+                Email = r.Email,
+                Phone = r.Phone,
+                PropertyAddress = address,
+                Paid = paidLabel
+            });
+        }
+
+        return result;
+    }
+
+    public async Task<byte[]> ExportMailingExcelAsync(int year, string? search = null, CancellationToken ct = default)
+    {
+        var rows = await ExportMailingAsync(year, search, ct);
+
+        using var wb = new XLWorkbook();
+        var ws = wb.AddWorksheet("Mailing");
+
+        var headers = new[] { "Name", "Address Line 1", "Address Line 2", "City", "State", "Postal" };
+        for (int i = 0; i < headers.Length; i++)
+            ws.Cell(1, i + 1).Value = headers[i];
+
+        int r = 2;
+        foreach (var x in rows)
+        {
+            ws.Cell(r, 1).Value = x.Name;
+            ws.Cell(r, 2).Value = x.Line1 ?? string.Empty;
+            ws.Cell(r, 3).Value = x.Line2 ?? string.Empty;
+            ws.Cell(r, 4).Value = x.City ?? string.Empty;
+            ws.Cell(r, 5).Value = x.State ?? string.Empty;
+            ws.Cell(r, 6).Value = x.PostalCode ?? string.Empty;
+            r++;
+        }
+
+        ws.Columns().AdjustToContents();
+
+        using var ms = new System.IO.MemoryStream();
+        wb.SaveAs(ms);
+        return ms.ToArray();
+    }
+
+    public async Task<byte[]> ExportMemberExcelAsync(int year, string? search = null, CancellationToken ct = default)
+    {
+        var rows = await ExportMemberAsync(year, search, ct);
+
+        using var wb = new XLWorkbook();
+        var ws = wb.AddWorksheet("Members");
+        var headers = new[] { "First Name", "Last Name", "Property Address", "Email", "Phone", "Paid" };
+        for (int i = 0; i < headers.Length; i++)
+            ws.Cell(1, i + 1).Value = headers[i];
+
+        int r = 2;
+        foreach (var x in rows)
+        {
+            ws.Cell(r, 1).Value = x.FirstName;
+            ws.Cell(r, 2).Value = x.LastName;
+            ws.Cell(r, 3).Value = x.PropertyAddress;
+            ws.Cell(r, 4).Value = x.Email ?? string.Empty;
+            ws.Cell(r, 5).Value = x.Phone ?? string.Empty;
+            ws.Cell(r, 6).Value = x.Paid;
+            r++;
+        }
+
+        ws.Columns().AdjustToContents();
+
+        using var ms = new System.IO.MemoryStream();
+        wb.SaveAs(ms);
+        return ms.ToArray();
     }
 
     public async Task MakeAddressPrimaryAsync(int personId, int addressId, CancellationToken ct = default)

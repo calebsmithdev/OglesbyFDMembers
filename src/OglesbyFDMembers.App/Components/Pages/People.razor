@@ -6,7 +6,7 @@
 
 <h1>People</h1>
 
-<RadzenRow Wrap="FlexWrap.Wrap" Gap="1rem" Style="margin-bottom: 1rem;">
+<RadzenRow Wrap="FlexWrap.Wrap" Gap="1rem" Style="margin-bottom: 1rem; align-items:flex-end;">
     <RadzenColumn Size="12" SizeSM="8" SizeMD="6" SizeLG="4">
         <RadzenFormField Text="Year" Variant="Variant.Outlined" Style="width:100%">
             <ChildContent>
@@ -33,6 +33,17 @@
                 </div>
             </ChildContent>
         </RadzenFormField>
+    </RadzenColumn>
+    <RadzenColumn Size="12" SizeSM="8" SizeMD="6" SizeLG="4">
+        <div style="display:flex; gap:.5rem; align-items:center;">
+            <RadzenSplitButton Text="Export" Icon="download" ButtonStyle="ButtonStyle.Primary" Size="ButtonSize.Medium"
+                                Click="@(args => OnExportAction(args?.Value?.ToString()))">
+                <ChildContent>
+                    <RadzenSplitButtonItem Text="Export Mailing List (Excel)" Value="mailing-xlsx" Icon="download" />
+                    <RadzenSplitButtonItem Text="Export Member List (Excel)" Value="member-xlsx" Icon="download" />
+                </ChildContent>
+            </RadzenSplitButton>
+        </div>
     </RadzenColumn>
 </RadzenRow>
 
@@ -68,6 +79,7 @@
     private int year;
     private string? search;
     private bool loading;
+    [Inject] IJSRuntime JS { get; set; } = default!;
 
     protected override async Task OnInitializedAsync()
     {
@@ -102,6 +114,36 @@
     {
         Nav.NavigateTo($"/people/{personId}");
     }
+
+    private async Task OnExportAction(string? val)
+    {
+        if (string.IsNullOrWhiteSpace(val)) return;
+        try
+        {
+            if (val == "mailing-xlsx")
+            {
+                var bytes = await PeopleSvc.ExportMailingExcelAsync(year, search);
+                var base64 = Convert.ToBase64String(bytes);
+                var filename = $"mailing-list-{year}.xlsx";
+                await JS.InvokeVoidAsync("downloadBase64", filename, base64, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
+                Notifications.Notify(new NotificationMessage { Severity = NotificationSeverity.Success, Summary = "Export ready", Detail = "Mailing list exported." });
+            }
+            else if (val == "member-xlsx")
+            {
+                var bytes = await PeopleSvc.ExportMemberExcelAsync(year, search);
+                var base64 = Convert.ToBase64String(bytes);
+                var filename = $"member-list-{year}.xlsx";
+                await JS.InvokeVoidAsync("downloadBase64", filename, base64, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
+                Notifications.Notify(new NotificationMessage { Severity = NotificationSeverity.Success, Summary = "Export ready", Detail = "Member list exported." });
+            }
+        }
+        catch (Exception ex)
+        {
+            Notifications.Notify(new NotificationMessage { Severity = NotificationSeverity.Error, Summary = "Export failed", Detail = ex.Message });
+        }
+    }
+
+    // CSV removed in favor of true Excel export as requested.
 
     private RenderFragment PaymentStatusTemplate(PersonListItem item) => builder =>
     {
