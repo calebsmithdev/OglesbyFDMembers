@@ -3,6 +3,7 @@ using System.ComponentModel.DataAnnotations;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using Mediator;
 using Microsoft.EntityFrameworkCore;
 using OglesbyFDMembers.Data;
 using OglesbyFDMembers.Domain.Entities;
@@ -13,10 +14,12 @@ namespace OglesbyFDMembers.App.Services;
 public class IntakeService
 {
     private readonly AppDbContext _db;
+    private readonly IMediator _mediator;
 
-    public IntakeService(AppDbContext db)
+    public IntakeService(AppDbContext db, IMediator mediator)
     {
         _db = db;
+        _mediator = mediator;
     }
 
     public async Task<decimal> GetFeeAmountAsync(int? year = null, CancellationToken ct = default)
@@ -123,6 +126,8 @@ public class IntakeService
         }
 
         await tx.CommitAsync(ct);
+        await _mediator.Publish(new Events.PersonCreated(person.Id), ct);
+        
         return person.Id;
     }
 }

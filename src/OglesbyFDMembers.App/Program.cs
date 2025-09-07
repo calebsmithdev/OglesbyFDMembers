@@ -1,3 +1,4 @@
+using Mediator;
 using Microsoft.EntityFrameworkCore;
 using OglesbyFDMembers.App.Components;
 using OglesbyFDMembers.Data;
@@ -13,6 +14,9 @@ builder.Services.AddRadzenComponents();
 
 // Register EF Core Sqlite DbContext
 builder.Services.AddSqliteDb(builder.Configuration, builder.Environment);
+
+// Setup the Mediator with source generator. Default assembly scanning is sufficient
+builder.Services.AddMediator();
 
 // App services
 builder.Services.AddScoped<OglesbyFDMembers.App.Services.IntakeService>();
