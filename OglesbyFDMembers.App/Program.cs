@@ -14,6 +14,10 @@ builder.Services.AddRadzenComponents();
 // Register EF Core Sqlite DbContext
 builder.Services.AddSqliteDb(builder.Configuration, builder.Environment);
 
+// App services
+builder.Services.AddScoped<OglesbyFDMembers.App.Services.IntakeService>();
+builder.Services.AddScoped<OglesbyFDMembers.App.Services.FeeScheduleService>();
+
 var app = builder.Build();
 
 // Attempt to migrate database on startup with friendly fallback

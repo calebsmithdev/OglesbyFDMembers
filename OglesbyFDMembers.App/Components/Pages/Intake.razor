@@ -1,0 +1,261 @@
+@page "/intake"
+@using OglesbyFDMembers.App.Services
+@using OglesbyFDMembers.Domain.Enums
+@using System.ComponentModel.DataAnnotations
+@inject IntakeService IntakeSvc
+@inject Radzen.NotificationService Notifications
+@inject IServiceProvider Services
+
+<h1>New Member Intake</h1>
+
+<EditForm Model="model" FormName="intake" OnValidSubmit="HandleSubmit">
+    <DataAnnotationsValidator />
+    <ValidationSummary />
+
+    <div class="row g-3">
+        <div class="col-12">
+            <h4>Contact</h4>
+        </div>
+        <div class="col-md-4">
+            <label class="form-label">First Name</label>
+            <InputText class="form-control" @bind-Value="model.FirstName" />
+            <ValidationMessage For="() => model.FirstName" />
+        </div>
+        <div class="col-md-4">
+            <label class="form-label">Last Name</label>
+            <InputText class="form-control" @bind-Value="model.LastName" />
+            <ValidationMessage For="() => model.LastName" />
+        </div>
+        <div class="col-md-4">
+            <label class="form-label">Phone (optional)</label>
+            <InputText class="form-control" @bind-Value="model.Phone" />
+        </div>
+        <div class="col-md-6">
+            <label class="form-label">Email (optional)</label>
+            <InputText class="form-control" @bind-Value="model.Email" />
+            <ValidationMessage For="() => model.Email" />
+        </div>
+
+        <div class="col-12 mt-3">
+            <h4>Mailing Address</h4>
+        </div>
+        <div class="col-md-6">
+            <label class="form-label">Address Line 1</label>
+            <InputText class="form-control" @bind-Value="model.AddressLine1" />
+            <ValidationMessage For="() => model.AddressLine1" />
+        </div>
+        <div class="col-md-6">
+            <label class="form-label">Address Line 2</label>
+            <InputText class="form-control" @bind-Value="model.AddressLine2" />
+        </div>
+        <div class="col-md-4">
+            <label class="form-label">City</label>
+            <InputText class="form-control" @bind-Value="model.City" />
+        </div>
+        <div class="col-md-4">
+            <label class="form-label">State</label>
+            <InputText class="form-control" @bind-Value="model.State" />
+        </div>
+        <div class="col-md-4">
+            <label class="form-label">Postal Code</label>
+            <InputText class="form-control" @bind-Value="model.PostalCode" />
+        </div>
+
+        <div class="col-12 mt-3">
+            <h4>Property</h4>
+        </div>
+        <div class="col-md-4">
+            <label class="form-label">Parcel Number</label>
+            <InputText class="form-control" @bind-Value="model.ParcelNumber" />
+            <ValidationMessage For="() => model.ParcelNumber" />
+        </div>
+        <div class="col-md-8 d-flex align-items-end">
+            <div class="form-check">
+                <InputCheckbox class="form-check-input" @bind-Value="model.PropertySameAsAddress" />
+                <label class="form-check-label">Property address is same as mailing</label>
+            </div>
+        </div>
+        @if (!model.PropertySameAsAddress)
+        {
+            <div class="col-md-6">
+                <label class="form-label">Property Address Line 1</label>
+                <InputText class="form-control" @bind-Value="model.PropertyAddressLine1" />
+                <ValidationMessage For="() => model.PropertyAddressLine1" />
+            </div>
+            <div class="col-md-6">
+                <label class="form-label">Property Address Line 2</label>
+                <InputText class="form-control" @bind-Value="model.PropertyAddressLine2" />
+            </div>
+            <div class="col-md-4">
+                <label class="form-label">Property City</label>
+                <InputText class="form-control" @bind-Value="model.PropertyCity" />
+            </div>
+            <div class="col-md-4">
+                <label class="form-label">Property State</label>
+                <InputText class="form-control" @bind-Value="model.PropertyState" />
+            </div>
+            <div class="col-md-4">
+                <label class="form-label">Property Postal Code</label>
+                <InputText class="form-control" @bind-Value="model.PropertyPostalCode" />
+            </div>
+        }
+
+        <div class="col-12 mt-3">
+            <h4>Payment</h4>
+        </div>
+        <div class="col-md-3">
+            <div class="form-check">
+                <InputCheckbox class="form-check-input" @bind-Value="model.HasPaid" />
+                <label class="form-check-label">Paid</label>
+            </div>
+        </div>
+        @if (model.HasPaid)
+        {
+            <div class="col-md-3">
+                <label class="form-label">Payment Type</label>
+                <InputSelect class="form-select" @bind-Value="model.PaymentType">
+                    <option value="@PaymentType.Cash">Cash</option>
+                    <option value="@PaymentType.Check">Check</option>
+                    <option value="@PaymentType.Utility">Utility</option>
+                </InputSelect>
+            </div>
+            <div class="col-md-3">
+                <label class="form-label">Paid Date (optional)</label>
+                <InputDate class="form-control" @bind-Value="model.PaidDate" />
+            </div>
+            @if (model.PaymentType == PaymentType.Check)
+            {
+                <div class="col-md-3">
+                    <label class="form-label">Check # (optional)</label>
+                    <InputText class="form-control" @bind-Value="model.CheckNumber" />
+                </div>
+            }
+        }
+
+        <div class="col-12 mt-3">
+            <button type="submit" class="btn btn-primary">Save</button>
+            <button type="button" class="btn btn-secondary ms-2" @onclick="Reset">Reset</button>
+        </div>
+    </div>
+</EditForm>
+
+@code {
+    private IntakeVm model = new();
+
+    private async Task HandleSubmit()
+    {
+        // Validate conditional fields
+        if (!model.PropertySameAsAddress && string.IsNullOrWhiteSpace(model.PropertyAddressLine1))
+        {
+            Notifications.Notify(new Radzen.NotificationMessage
+            {
+                Severity = Radzen.NotificationSeverity.Warning,
+                Summary = "Missing Property Address",
+                Detail = "Property Address Line 1 is required when using a different property address.",
+                Duration = 5000
+            });
+            return;
+        }
+
+        // Map to request
+        var req = new IntakeRequest
+        {
+            FirstName = model.FirstName,
+            LastName = model.LastName,
+            Email = model.Email,
+            Phone = model.Phone,
+            AddressLine1 = model.AddressLine1,
+            AddressLine2 = model.AddressLine2,
+            City = model.City,
+            State = model.State,
+            PostalCode = model.PostalCode,
+            PropertySameAsAddress = model.PropertySameAsAddress,
+            ParcelNumber = model.ParcelNumber,
+            PropertySitusAddress = model.PropertySameAsAddress ? null : ComposePropertySitusAddress(),
+            HasPaid = model.HasPaid,
+            PaymentType = model.PaymentType,
+            CheckNumber = model.CheckNumber,
+            PaidDateUtc = model.PaidDate?.ToUniversalTime(),
+            AssessmentYear = model.AssessmentYear,
+            Notes = model.Notes
+        };
+
+        try
+        {
+            var id = await IntakeSvc.CreateAsync(req);
+            Notifications.Notify(new Radzen.NotificationMessage
+            {
+                Severity = Radzen.NotificationSeverity.Success,
+                Summary = "Saved",
+                Detail = $"Person #{id} created successfully.",
+                Duration = 3000
+            });
+            Reset();
+        }
+        catch (Exception ex)
+        {
+            Notifications.Notify(new Radzen.NotificationMessage
+            {
+                Severity = Radzen.NotificationSeverity.Error,
+                Summary = "Error",
+                Detail = ex.Message,
+                Duration = 6000
+            });
+        }
+    }
+
+    private void Reset()
+    {
+        model = new IntakeVm();
+    }
+
+    private string? ComposePropertySitusAddress()
+    {
+        var parts = new List<string>();
+        if (!string.IsNullOrWhiteSpace(model.PropertyAddressLine1)) parts.Add(model.PropertyAddressLine1.Trim());
+        if (!string.IsNullOrWhiteSpace(model.PropertyAddressLine2)) parts.Add(model.PropertyAddressLine2.Trim());
+
+        var cityStatePostal = string.Join(" ", new[]
+        {
+            string.IsNullOrWhiteSpace(model.PropertyCity) ? null : model.PropertyCity!.Trim() + ",",
+            string.IsNullOrWhiteSpace(model.PropertyState) ? null : model.PropertyState!.Trim(),
+            string.IsNullOrWhiteSpace(model.PropertyPostalCode) ? null : model.PropertyPostalCode!.Trim()
+        }.Where(s => !string.IsNullOrWhiteSpace(s)));
+
+        if (!string.IsNullOrWhiteSpace(cityStatePostal)) parts.Add(cityStatePostal);
+        return string.Join(", ", parts);
+    }
+
+    private class IntakeVm
+    {
+        // Person
+        [Required, MaxLength(100)] public string FirstName { get; set; } = string.Empty;
+        [Required, MaxLength(100)] public string LastName { get; set; } = string.Empty;
+        [EmailAddress, MaxLength(200)] public string? Email { get; set; }
+        [MaxLength(32)] public string? Phone { get; set; }
+
+        // Address
+        [Required, MaxLength(200)] public string AddressLine1 { get; set; } = string.Empty;
+        [MaxLength(200)] public string? AddressLine2 { get; set; }
+        [MaxLength(100)] public string? City { get; set; }
+        [MaxLength(64)] public string? State { get; set; }
+        [MaxLength(32)] public string? PostalCode { get; set; }
+
+        // Property
+        public bool PropertySameAsAddress { get; set; } = true;
+        [Required, MaxLength(64)] public string ParcelNumber { get; set; } = string.Empty;
+        [MaxLength(200)] public string? PropertyAddressLine1 { get; set; }
+        [MaxLength(200)] public string? PropertyAddressLine2 { get; set; }
+        [MaxLength(100)] public string? PropertyCity { get; set; }
+        [MaxLength(64)] public string? PropertyState { get; set; }
+        [MaxLength(32)] public string? PropertyPostalCode { get; set; }
+
+        // Payment
+        public bool HasPaid { get; set; }
+        public PaymentType PaymentType { get; set; } = PaymentType.Cash;
+        public string? CheckNumber { get; set; }
+        public DateTime? PaidDate { get; set; }
+        public int? AssessmentYear { get; set; }
+        public string? Notes { get; set; }
+    }
+}

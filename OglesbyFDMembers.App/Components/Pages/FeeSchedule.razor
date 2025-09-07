@@ -1,0 +1,165 @@
+@page "/fee-schedule"
+@using System.ComponentModel.DataAnnotations
+@using OglesbyFDMembers.App.Services
+@inject FeeScheduleService FeeSvc
+@inject IJSRuntime Js
+@inject NotificationService Notifications
+@inject NavigationManager Nav
+
+<h1>Fee Schedule</h1>
+
+<RadzenTemplateForm Data="@model" Submit="@((Vm args) => { Save(args); })">
+    <RadzenRow Wrap="FlexWrap.Wrap" Gap="1rem">
+        <RadzenColumn Size="12" SizeSM="6">
+            <RadzenRow Wrap="FlexWrap.Wrap" Gap="1rem">
+                <RadzenColumn Size="12" SizeSM="6">
+                    <RadzenFormField Text="Year" Variant="Variant.Outlined" Style="width: 100%;">
+                        <ChildContent>
+                            <RadzenNumeric Name="Year" @bind-Value="model.Year"/>
+                        </ChildContent>
+                        <Helper>
+                            <RadzenDataAnnotationValidator Component="Year" />
+                        </Helper>
+                    </RadzenFormField>
+                </RadzenColumn>
+                <RadzenColumn Size="12" SizeSM="6">
+                    <RadzenFormField Text="Amount" Variant="Variant.Outlined" Style="width: 100%;">
+                        <ChildContent>
+                            <RadzenNumeric Name="Amount" @bind-Value="model.Amount" Step="0.01"/>
+                        </ChildContent>
+                        <Helper>
+                            <RadzenDataAnnotationValidator Component="Amount" />
+                        </Helper>
+                    </RadzenFormField>
+                </RadzenColumn>
+                <RadzenColumn Size="12">
+                    <RadzenButton Text="Save" ButtonStyle="ButtonStyle.Primary" ButtonType="ButtonType.Submit" />
+                </RadzenColumn>
+            </RadzenRow>
+        </RadzenColumn>
+    </RadzenRow>
+</RadzenTemplateForm>
+
+<div class="mt-4">
+    <h5>Existing Fee Schedules</h5>
+    @if (existing?.Count > 0)
+    {
+        <table class="table table-sm table-striped align-middle" style="max-width: 560px;">
+            <thead>
+            <tr>
+                <th style="width: 120px;">Year</th>
+                <th>Amount</th>
+                <th style="width: 180px;">Actions</th>
+            </tr>
+            </thead>
+            <tbody>
+            @foreach (var f in existing)
+            {
+                <tr>
+                    <td>@f.Year</td>
+                    <td>@f.AmountPerProperty.ToString("C")</td>
+                    <td>
+                        <button class="btn btn-sm btn-outline-primary me-2" @onclick="(() => EditRow(f))">Edit</button>
+                        <button class="btn btn-sm btn-outline-danger" @onclick="(() => DeleteRow(f))">Delete</button>
+                    </td>
+                </tr>
+            }
+            </tbody>
+        </table>
+    }
+    else
+    {
+        <div class="text-muted">No fee schedules have been set yet.</div>
+    }
+</div>
+
+@code {
+    private Vm model = new() { Year = DateTime.Now.Year };
+    private List<OglesbyFDMembers.Domain.Entities.FeeSchedule>? existing;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var current = await FeeSvc.GetAsync(model.Year);
+        if (current != null)
+        {
+            model.Amount = current.AmountPerProperty;
+        }
+        await LoadList();
+    }
+
+    private async Task Save(Vm args)
+    {
+        try
+        {
+            await FeeSvc.SetAsync(args.Year, args.Amount);
+            Notifications.Notify(new NotificationMessage
+            {
+                Severity = NotificationSeverity.Success,
+                Summary = "Saved",
+                Detail = $"Fee for {args.Year} set to {args.Amount:C}.",
+                Duration = 3000
+            });
+            
+            // Convert POST to GET to avoid resubmit on refresh (PRG pattern)
+            Nav.NavigateTo("/fee-schedule", replace: true);
+        }
+        catch (Exception ex)
+        {
+            Notifications.Notify(new NotificationMessage
+            {
+                Severity = NotificationSeverity.Error,
+                Summary = "Error",
+                Detail = ex.Message,
+                Duration = 6000
+            });
+        }
+    }
+
+    private async Task LoadList()
+    {
+        existing = await FeeSvc.ListAsync();
+    }
+
+    private void EditRow(Domain.Entities.FeeSchedule f)
+    {
+        model.Year = f.Year;
+        model.Amount = f.AmountPerProperty;
+    }
+
+    private async Task DeleteRow(Domain.Entities.FeeSchedule f)
+    {
+        var ok = await Js.InvokeAsync<bool>("confirm", $"Delete fee schedule for {f.Year}? This cannot be undone.");
+        if (!ok) return;
+        try
+        {
+            await FeeSvc.DeleteAsync(f.Id);
+            await LoadList();
+            Notifications.Notify(new NotificationMessage
+            {
+                Severity = NotificationSeverity.Success,
+                Summary = "Deleted",
+                Detail = $"Fee for {f.Year} deleted.",
+                Duration = 2500
+            });
+        }
+        catch (Exception ex)
+        {
+            Notifications.Notify(new NotificationMessage
+            {
+                Severity = NotificationSeverity.Error,
+                Summary = "Error",
+                Detail = ex.Message,
+                Duration = 6000
+            });
+        }
+    }
+
+    private class Vm
+    {
+        [Range(1900,2100, ErrorMessage = "Year should be between 1900 and 2100")]
+        public int Year { get; set; }
+
+        [Range(typeof(decimal), "1", "10000000", ErrorMessage = "Amount must be greater than $1.00")]
+        public decimal Amount { get; set; }
+    }
+}

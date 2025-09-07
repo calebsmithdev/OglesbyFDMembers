@@ -1,12 +1,30 @@
-using System;
+﻿using System;
 using Microsoft.EntityFrameworkCore.Migrations;
+
+#nullable disable
 
 namespace OglesbyFDMembers.Data.Migrations
 {
-    public partial class InitialCreate : Migration
+    /// <inheritdoc />
+    public partial class Initial : Migration
     {
+        /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
+            migrationBuilder.CreateTable(
+                name: "FeeSchedules",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "INTEGER", nullable: false)
+                        .Annotation("Sqlite:Autoincrement", true),
+                    Year = table.Column<int>(type: "INTEGER", nullable: false),
+                    AmountPerProperty = table.Column<decimal>(type: "decimal(10,2)", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_FeeSchedules", x => x.Id);
+                });
+
             migrationBuilder.CreateTable(
                 name: "People",
                 columns: table => new
@@ -42,34 +60,24 @@ namespace OglesbyFDMembers.Data.Migrations
                 });
 
             migrationBuilder.CreateTable(
-                name: "FeeSchedules",
-                columns: table => new
-                {
-                    Id = table.Column<int>(type: "INTEGER", nullable: false)
-                        .Annotation("Sqlite:Autoincrement", true),
-                    Year = table.Column<int>(type: "INTEGER", nullable: false),
-                    AmountPerProperty = table.Column<decimal>(type: "decimal(10,2)", nullable: false)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_FeeSchedules", x => x.Id);
-                });
-
-            migrationBuilder.CreateTable(
-                name: "PersonAliases",
+                name: "Payments",
                 columns: table => new
                 {
                     Id = table.Column<int>(type: "INTEGER", nullable: false)
                         .Annotation("Sqlite:Autoincrement", true),
                     PersonId = table.Column<int>(type: "INTEGER", nullable: false),
-                    Alias = table.Column<string>(type: "TEXT", maxLength: 200, nullable: false),
-                    CreatedUtc = table.Column<DateTime>(type: "TEXT", nullable: false)
+                    PaymentType = table.Column<int>(type: "INTEGER", nullable: false),
+                    Amount = table.Column<decimal>(type: "decimal(10,2)", nullable: false),
+                    PaidUtc = table.Column<DateTime>(type: "TEXT", nullable: false),
+                    CheckNumber = table.Column<string>(type: "TEXT", maxLength: 50, nullable: true),
+                    IsDonation = table.Column<bool>(type: "INTEGER", nullable: false),
+                    Notes = table.Column<string>(type: "TEXT", maxLength: 500, nullable: true)
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_PersonAliases", x => x.Id);
+                    table.PrimaryKey("PK_Payments", x => x.Id);
                     table.ForeignKey(
-                        name: "FK_PersonAliases_People_PersonId",
+                        name: "FK_Payments_People_PersonId",
                         column: x => x.PersonId,
                         principalTable: "People",
                         principalColumn: "Id",
@@ -104,29 +112,46 @@ namespace OglesbyFDMembers.Data.Migrations
                 });
 
             migrationBuilder.CreateTable(
-                name: "Ownerships",
+                name: "PersonAliases",
                 columns: table => new
                 {
                     Id = table.Column<int>(type: "INTEGER", nullable: false)
                         .Annotation("Sqlite:Autoincrement", true),
                     PersonId = table.Column<int>(type: "INTEGER", nullable: false),
-                    PropertyId = table.Column<int>(type: "INTEGER", nullable: false),
-                    StartDate = table.Column<DateTime>(type: "TEXT", nullable: false),
-                    EndDate = table.Column<DateTime>(type: "TEXT", nullable: true)
+                    Alias = table.Column<string>(type: "TEXT", maxLength: 200, nullable: false),
+                    CreatedUtc = table.Column<DateTime>(type: "TEXT", nullable: false)
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_Ownerships", x => x.Id);
+                    table.PrimaryKey("PK_PersonAliases", x => x.Id);
                     table.ForeignKey(
-                        name: "FK_Ownerships_People_PersonId",
+                        name: "FK_PersonAliases_People_PersonId",
                         column: x => x.PersonId,
                         principalTable: "People",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Restrict);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "UtilityNotices",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "INTEGER", nullable: false)
+                        .Annotation("Sqlite:Autoincrement", true),
+                    PayerNameRaw = table.Column<string>(type: "TEXT", maxLength: 200, nullable: false),
+                    Amount = table.Column<decimal>(type: "decimal(10,2)", nullable: false),
+                    ImportedUtc = table.Column<DateTime>(type: "TEXT", nullable: false),
+                    MatchedPersonId = table.Column<int>(type: "INTEGER", nullable: true),
+                    IsAllocated = table.Column<bool>(type: "INTEGER", nullable: false),
+                    NeedsReview = table.Column<bool>(type: "INTEGER", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_UtilityNotices", x => x.Id);
                     table.ForeignKey(
-                        name: "FK_Ownerships_Properties_PropertyId",
-                        column: x => x.PropertyId,
-                        principalTable: "Properties",
+                        name: "FK_UtilityNotices_People_MatchedPersonId",
+                        column: x => x.MatchedPersonId,
+                        principalTable: "People",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Restrict);
                 });
@@ -156,26 +181,29 @@ namespace OglesbyFDMembers.Data.Migrations
                 });
 
             migrationBuilder.CreateTable(
-                name: "Payments",
+                name: "Ownerships",
                 columns: table => new
                 {
                     Id = table.Column<int>(type: "INTEGER", nullable: false)
                         .Annotation("Sqlite:Autoincrement", true),
                     PersonId = table.Column<int>(type: "INTEGER", nullable: false),
-                    PaymentType = table.Column<int>(type: "INTEGER", nullable: false),
-                    Amount = table.Column<decimal>(type: "decimal(10,2)", nullable: false),
-                    PaidUtc = table.Column<DateTime>(type: "TEXT", nullable: false),
-                    CheckNumber = table.Column<string>(type: "TEXT", maxLength: 50, nullable: true),
-                    IsDonation = table.Column<bool>(type: "INTEGER", nullable: false),
-                    Notes = table.Column<string>(type: "TEXT", maxLength: 500, nullable: true)
+                    PropertyId = table.Column<int>(type: "INTEGER", nullable: false),
+                    StartDate = table.Column<DateTime>(type: "TEXT", nullable: false),
+                    EndDate = table.Column<DateTime>(type: "TEXT", nullable: true)
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_Payments", x => x.Id);
+                    table.PrimaryKey("PK_Ownerships", x => x.Id);
                     table.ForeignKey(
-                        name: "FK_Payments_People_PersonId",
+                        name: "FK_Ownerships_People_PersonId",
                         column: x => x.PersonId,
                         principalTable: "People",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                    table.ForeignKey(
+                        name: "FK_Ownerships_Properties_PropertyId",
+                        column: x => x.PropertyId,
+                        principalTable: "Properties",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Restrict);
                 });
@@ -207,36 +235,22 @@ namespace OglesbyFDMembers.Data.Migrations
                         onDelete: ReferentialAction.Restrict);
                 });
 
-            migrationBuilder.CreateTable(
-                name: "UtilityNotices",
-                columns: table => new
-                {
-                    Id = table.Column<int>(type: "INTEGER", nullable: false)
-                        .Annotation("Sqlite:Autoincrement", true),
-                    PayerNameRaw = table.Column<string>(type: "TEXT", maxLength: 200, nullable: false),
-                    Amount = table.Column<decimal>(type: "decimal(10,2)", nullable: false),
-                    ImportedUtc = table.Column<DateTime>(type: "TEXT", nullable: false),
-                    MatchedPersonId = table.Column<int>(type: "INTEGER", nullable: true),
-                    IsAllocated = table.Column<bool>(type: "INTEGER", nullable: false),
-                    NeedsReview = table.Column<bool>(type: "INTEGER", nullable: false)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_UtilityNotices", x => x.Id);
-                    table.ForeignKey(
-                        name: "FK_UtilityNotices_People_MatchedPersonId",
-                        column: x => x.MatchedPersonId,
-                        principalTable: "People",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Restrict);
-                });
-
-            // Indexes
             migrationBuilder.CreateIndex(
                 name: "IX_Assessments_PropertyId_Year",
                 table: "Assessments",
                 columns: new[] { "PropertyId", "Year" },
                 unique: true);
+
+            migrationBuilder.CreateIndex(
+                name: "IX_FeeSchedules_Year",
+                table: "FeeSchedules",
+                column: "Year",
+                unique: true);
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Ownerships_PersonId",
+                table: "Ownerships",
+                column: "PersonId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_Ownerships_PropertyId_StartDate_EndDate",
@@ -264,50 +278,48 @@ namespace OglesbyFDMembers.Data.Migrations
                 columns: new[] { "PersonId", "IsPrimary", "IsValidForMail" });
 
             migrationBuilder.CreateIndex(
-                name: "IX_PersonAddresses_PersonId",
-                table: "PersonAddresses",
-                column: "PersonId");
-
-            migrationBuilder.CreateIndex(
                 name: "IX_PersonAliases_PersonId",
                 table: "PersonAliases",
                 column: "PersonId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_Ownerships_PersonId",
-                table: "Ownerships",
-                column: "PersonId");
-
-            migrationBuilder.CreateIndex(
-                name: "IX_Assessments_PropertyId",
-                table: "Assessments",
-                column: "PropertyId");
-
-            migrationBuilder.CreateIndex(
                 name: "IX_UtilityNotices_MatchedPersonId_IsAllocated",
                 table: "UtilityNotices",
                 columns: new[] { "MatchedPersonId", "IsAllocated" });
-
-            migrationBuilder.CreateIndex(
-                name: "IX_FeeSchedules_Year",
-                table: "FeeSchedules",
-                column: "Year",
-                unique: true);
         }
 
+        /// <inheritdoc />
         protected override void Down(MigrationBuilder migrationBuilder)
         {
-            migrationBuilder.DropTable(name: "PaymentAllocations");
-            migrationBuilder.DropTable(name: "PersonAddresses");
-            migrationBuilder.DropTable(name: "PersonAliases");
-            migrationBuilder.DropTable(name: "UtilityNotices");
-            migrationBuilder.DropTable(name: "Assessments");
-            migrationBuilder.DropTable(name: "Payments");
-            migrationBuilder.DropTable(name: "FeeSchedules");
-            migrationBuilder.DropTable(name: "Ownerships");
-            migrationBuilder.DropTable(name: "People");
-            migrationBuilder.DropTable(name: "Properties");
+            migrationBuilder.DropTable(
+                name: "FeeSchedules");
+
+            migrationBuilder.DropTable(
+                name: "Ownerships");
+
+            migrationBuilder.DropTable(
+                name: "PaymentAllocations");
+
+            migrationBuilder.DropTable(
+                name: "PersonAddresses");
+
+            migrationBuilder.DropTable(
+                name: "PersonAliases");
+
+            migrationBuilder.DropTable(
+                name: "UtilityNotices");
+
+            migrationBuilder.DropTable(
+                name: "Assessments");
+
+            migrationBuilder.DropTable(
+                name: "Payments");
+
+            migrationBuilder.DropTable(
+                name: "Properties");
+
+            migrationBuilder.DropTable(
+                name: "People");
         }
     }
 }
-
