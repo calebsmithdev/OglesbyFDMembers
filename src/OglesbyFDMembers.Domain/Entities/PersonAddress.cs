@@ -22,6 +22,12 @@ public class PersonAddress
     [MaxLength(200)]
     public string Line1 { get; set; } = string.Empty;
 
+    /// <summary>
+    /// Optional addressee line to print above the address (e.g., "Wife & Husband Lastname").
+    /// </summary>
+    [MaxLength(200)]
+    public string? AddresseeName { get; set; }
+
     [MaxLength(200)]
     public string? Line2 { get; set; }
 

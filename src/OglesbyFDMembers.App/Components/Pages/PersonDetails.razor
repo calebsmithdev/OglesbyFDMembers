@@ -111,6 +111,7 @@ else
                         <Columns>
                             <RadzenDataGridColumn TItem="OglesbyFDMembers.App.Services.MailingAddress" Title="Address">
                                 <Template Context="a">
+                                    <div style="font-weight:600;">@(!string.IsNullOrWhiteSpace(a.AddresseeName) ? a.AddresseeName : details.FullName)</div>
                                     <div>@a.Line1</div>
                                     @if (!string.IsNullOrWhiteSpace(a.Line2))
                                     {

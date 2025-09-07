@@ -13,6 +13,7 @@ public class PersonAddressConfig : IEntityTypeConfiguration<PersonAddress>
         builder.HasKey(pa => pa.Id);
 
         builder.Property(pa => pa.Line1).HasMaxLength(200).IsRequired();
+        builder.Property(pa => pa.AddresseeName).HasMaxLength(200);
         builder.Property(pa => pa.Line2).HasMaxLength(200);
         builder.Property(pa => pa.City).HasMaxLength(100);
         builder.Property(pa => pa.State).HasMaxLength(64);
@@ -26,4 +27,3 @@ public class PersonAddressConfig : IEntityTypeConfiguration<PersonAddress>
             .OnDelete(DeleteBehavior.Restrict);
     }
 }
-

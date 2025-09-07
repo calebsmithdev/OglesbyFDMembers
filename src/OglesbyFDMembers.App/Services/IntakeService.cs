@@ -53,6 +53,7 @@ public class IntakeService
         var address = new PersonAddress
         {
             PersonId = person.Id,
+            AddresseeName = string.IsNullOrWhiteSpace(request.AddresseeName) ? null : request.AddresseeName.Trim(),
             Line1 = request.AddressLine1.Trim(),
             Line2 = string.IsNullOrWhiteSpace(request.AddressLine2) ? null : request.AddressLine2.Trim(),
             City = string.IsNullOrWhiteSpace(request.City) ? null : request.City!.Trim(),
@@ -141,6 +142,7 @@ public class IntakeRequest
     [MaxLength(32)] public string? Phone { get; set; }
 
     // Mailing Address
+    [MaxLength(200)] public string? AddresseeName { get; set; }
     [Required, MaxLength(200)] public string AddressLine1 { get; set; } = string.Empty;
     [MaxLength(200)] public string? AddressLine2 { get; set; }
     [MaxLength(100)] public string? City { get; set; }

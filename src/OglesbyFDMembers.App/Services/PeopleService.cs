@@ -126,7 +126,7 @@ public class PeopleService
         await tx.CommitAsync(ct);
     }
 
-    public async Task<int> AddAddressAsync(int personId, string line1, string? line2, string? city, string? state, string? postalCode, bool isPrimary, bool isValidForMail = true, CancellationToken ct = default)
+    public async Task<int> AddAddressAsync(int personId, string? addresseeName, string line1, string? line2, string? city, string? state, string? postalCode, bool isPrimary, bool isValidForMail = true, CancellationToken ct = default)
     {
         await using var tx = await _db.Database.BeginTransactionAsync(ct);
 
@@ -153,6 +153,7 @@ public class PeopleService
         var entity = new PersonAddress
         {
             PersonId = personId,
+            AddresseeName = string.IsNullOrWhiteSpace(addresseeName) ? null : addresseeName.Trim(),
             Line1 = line1.Trim(),
             Line2 = string.IsNullOrWhiteSpace(line2) ? null : line2.Trim(),
             City = string.IsNullOrWhiteSpace(city) ? null : city.Trim(),
@@ -412,6 +413,7 @@ public class PeopleService
             .Select(a => new MailingAddress
             {
                 Id = a.Id,
+                AddresseeName = a.AddresseeName,
                 Line1 = a.Line1,
                 Line2 = a.Line2,
                 City = a.City,
@@ -578,6 +580,7 @@ public class UpdatePersonRequest
 public class MailingAddress
 {
     public int Id { get; set; }
+    public string? AddresseeName { get; set; }
     public string Line1 { get; set; } = string.Empty;
     public string? Line2 { get; set; }
     public string? City { get; set; }

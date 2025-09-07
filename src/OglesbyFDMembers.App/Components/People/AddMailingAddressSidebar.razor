@@ -9,6 +9,9 @@
     <RadzenTemplateForm TItem="AddAddressModel" Data="model" Submit="HandleValidSubmit">
         <div class="row g-2">
             <div class="col-12">
+                <RadzenTextBox @bind-Value="model.AddresseeName" Name="AddresseeName" Placeholder="Addressee name (optional)" Style="width:100%" />
+            </div>
+            <div class="col-12">
                 <RadzenTextBox @bind-Value="model.Line1" Name="Line1" Placeholder="Address line 1" Style="width:100%" />
                 <RadzenRequiredValidator Component="Line1" Text="Line 1 is required" />
             </div>
@@ -51,12 +54,36 @@
         IsPrimary = false
     };
 
+    private bool _init;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!firstRender || _init) return;
+        _init = true;
+        try
+        {
+            var details = await PeopleSvc.GetDetailsAsync(PersonId);
+            if (details != null)
+            {
+                var preferred = details.Addresses.FirstOrDefault(a => !string.IsNullOrWhiteSpace(a.AddresseeName))?.AddresseeName;
+                var fallback = details.FullName;
+                if (string.IsNullOrWhiteSpace(model.AddresseeName))
+                {
+                    model.AddresseeName = preferred ?? fallback;
+                    await InvokeAsync(StateHasChanged);
+                }
+            }
+        }
+        catch { }
+    }
+
     private async Task HandleValidSubmit(AddAddressModel _)
     {
         try
         {
             await PeopleSvc.AddAddressAsync(
                 PersonId,
+                model.AddresseeName,
                 model.Line1,
                 model.Line2,
                 model.City,
@@ -88,6 +115,7 @@
 
     private class AddAddressModel
     {
+        [MaxLength(200)] public string? AddresseeName { get; set; }
         [Required, MaxLength(200)] public string Line1 { get; set; } = string.Empty;
         [MaxLength(200)] public string? Line2 { get; set; }
         [MaxLength(100)] public string? City { get; set; }

@@ -140,3 +140,4 @@ Show a method that runs `VACUUM INTO` to a timestamped path, with try/catch and 
 
 * All `dotnet build` tasks need to run with escalated priviledges.
 * Do not create migrations in code by hand. You should prompt the user to run `dotnet ef migrations add` instead.
+* You are encouraged to run `dotnet build` after making code changes to verify it was built correctly. If there are errors, attempt to fix them before completing the task.

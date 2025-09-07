@@ -40,6 +40,10 @@
             <h4>Mailing Address</h4>
         </div>
         <div class="col-md-6">
+            <label class="form-label">Addressee Name (optional)</label>
+            <InputText class="form-control" @bind-Value="model.AddresseeName" />
+        </div>
+        <div class="col-md-6">
             <label class="form-label">Address Line 1</label>
             <InputText class="form-control" @bind-Value="model.AddressLine1" />
             <ValidationMessage For="() => model.AddressLine1" />
@@ -166,6 +170,9 @@
             LastName = model.LastName,
             Email = model.Email,
             Phone = model.Phone,
+            AddresseeName = string.IsNullOrWhiteSpace(model.AddresseeName)
+                ? string.Join(" ", new[] { model.FirstName, model.LastName }.Where(s => !string.IsNullOrWhiteSpace(s)))
+                : model.AddresseeName,
             AddressLine1 = model.AddressLine1,
             AddressLine2 = model.AddressLine2,
             City = model.City,
@@ -264,6 +271,7 @@
         [MaxLength(32)] public string? Phone { get; set; }
 
         // Address
+        [MaxLength(200)] public string? AddresseeName { get; set; }
         [Required, MaxLength(200)] public string AddressLine1 { get; set; } = string.Empty;
         [MaxLength(200)] public string? AddressLine2 { get; set; }
         [MaxLength(100)] public string? City { get; set; }
