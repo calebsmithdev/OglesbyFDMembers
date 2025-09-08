@@ -28,6 +28,13 @@ public class UtilityNotice
     public DateTime ImportedUtc { get; set; }
 
     public int? MatchedPersonId { get; set; }
+    
+    /// <summary>
+    /// Snapshot of the person's full name that was chosen during import
+    /// (auto or manual). Kept for audit even if the person's name changes later.
+    /// </summary>
+    [MaxLength(200)]
+    public string? OriginalFullName { get; set; }
 
     public bool IsAllocated { get; set; }
 

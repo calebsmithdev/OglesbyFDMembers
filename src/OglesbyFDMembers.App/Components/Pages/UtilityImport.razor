@@ -1,0 +1,287 @@
+@page "/utility-import"
+@using OglesbyFDMembers.App.Services
+@using System.ComponentModel.DataAnnotations
+@inject IUtilityImportService UtilitySvc
+@inject PeopleService People
+@inject DialogService Dialogs
+@inject NotificationService Toaster
+
+<h3>Import Utility Payments</h3>
+
+<div class="mb-3">
+    <InputFile OnChange="HandleSelected" accept="application/pdf,.pdf" />
+    <small class="text-muted ms-2">Upload the OCR PDF from the utility provider</small>
+    @if (!string.IsNullOrEmpty(error))
+    {
+        <div class="alert alert-danger mt-2">@error</div>
+    }
+</div>
+
+@if (rows is not null)
+{
+    <div class="d-flex align-items-center mb-2">
+        <RadzenButton Text="Clear" Click="@Clear" ButtonStyle="ButtonStyle.Light" />
+        <div class="ms-3">Total rows: <b>@rows.Count</b></div>
+        <div class="ms-3">Matched: <b>@rows.Count(r => GetAssigned(r) != null)</b></div>
+        <div class="ms-3">Unmatched: <b>@rows.Count(r => GetAssigned(r) == null)</b></div>
+        <div class="ms-3">
+            Year:
+            <select class="form-select form-select-sm d-inline-block" style="width: auto;" @bind="selectedYear">
+                @foreach (var y in years)
+                {
+                    <option value="@y">@y</option>
+                }
+            </select>
+        </div>
+        <div class="form-check form-switch ms-3">
+            <input class="form-check-input" type="checkbox" id="paymentsSwitch" @bind="createPayments">
+            <label class="form-check-label" for="paymentsSwitch">Create payments</label>
+        </div>
+        <div class="form-check form-switch ms-3">
+            <input class="form-check-input" type="checkbox" id="aliasSwitch" @bind="createAliases">
+            <label class="form-check-label" for="aliasSwitch">Alias on manual assign</label>
+        </div>
+        <RadzenButton class="ms-auto" Text="Process" Click="@Process" ButtonStyle="ButtonStyle.Primary" Disabled="@(!rows.Any())" />
+    </div>
+
+    <div class="row">
+        <div class="col-md-6">
+            <h5>Unmatched</h5>
+            <RadzenDataGrid Data="@rows.Where(r => GetAssigned(r) == null)" TItem="UtilityRowWithMatch" AllowPaging PageSize="10" RowHeight="34">
+                <Columns>
+                    <RadzenDataGridColumn TItem="UtilityRowWithMatch" Title="#" Width="60px" Filterable="false" Sortable="false">
+                        <Template Context="r">@(@rows.IndexOf(r)+1)</Template>
+                    </RadzenDataGridColumn>
+                    <RadzenDataGridColumn TItem="UtilityRowWithMatch" Property="Name" Title="Name" />
+                    <RadzenDataGridColumn TItem="UtilityRowWithMatch" Title="Amount">
+                        <Template Context="r">@r.Amount.ToString("C")</Template>
+                    </RadzenDataGridColumn>
+                    <RadzenDataGridColumn TItem="UtilityRowWithMatch" Title="Assign">
+                        <Template Context="r">
+                            <RadzenDropDownDataGrid @bind-Value="r.AssignedPersonId"
+                                                    TValue="int?"
+                                                    Data="@GetPersonOptions(r)"
+                                                    LoadData="@(args => LoadPersonOptions(r, args))"
+                                                    TextProperty="FullName"
+                                                    ValueProperty="PersonId"
+                                                    AllowFiltering="true"
+                                                    FilterCaseSensitivity="FilterCaseSensitivity.CaseInsensitive"
+                                                    Placeholder="Search person..."
+                                                    Open="@(() => EnsurePrefilterLoaded(r))"
+                                                    Change="@(args => OnAssignChanged(r, args))"
+                                                    Style="width:100%">
+                                <Columns>
+                                    <RadzenDropDownDataGridColumn Property="FullName" Title="Name" Width="40%" />
+                                    <RadzenDropDownDataGridColumn Property="Address" Title="Address" Width="60%" />
+                                </Columns>
+                            </RadzenDropDownDataGrid>
+                            <RadzenButton class="mt-1" Size="ButtonSize.Small" ButtonStyle="ButtonStyle.Light" Icon="clear" Text="Clear" Click="@(() => ClearAssign(r))" />
+                        </Template>
+                    </RadzenDataGridColumn>
+                </Columns>
+            </RadzenDataGrid>
+        </div>
+        <div class="col-md-6">
+            <h5>Matched</h5>
+            <RadzenDataGrid Data="@rows.Where(r => GetAssigned(r) != null)" TItem="UtilityRowWithMatch" AllowPaging PageSize="10" RowHeight="34">
+                <Columns>
+                    <RadzenDataGridColumn TItem="UtilityRowWithMatch" Title="#" Width="60px" Filterable="false" Sortable="false">
+                        <Template Context="r">@(@rows.IndexOf(r)+1)</Template>
+                    </RadzenDataGridColumn>
+                    <RadzenDataGridColumn TItem="UtilityRowWithMatch" Property="Name" Title="Name" />
+                    <RadzenDataGridColumn TItem="UtilityRowWithMatch" Title="Assigned At Import" Width="35%">
+                        <Template Context="r">@r.MatchedPersonName</Template>
+                    </RadzenDataGridColumn>
+                    <RadzenDataGridColumn TItem="UtilityRowWithMatch" Title="Amount">
+                        <Template Context="r">@r.Amount.ToString("C")</Template>
+                    </RadzenDataGridColumn>
+                    <RadzenDataGridColumn TItem="UtilityRowWithMatch" Title="Matched">
+                        <Template Context="r">
+                            @if (GetAssigned(r) is int pid)
+                            {
+                                <span>@assignedNames.GetValueOrDefault(pid)</span>
+                                <span class="text-muted small">(@(string.IsNullOrEmpty(r.MatchType) ? "Manual" : r.MatchType))</span>
+                            }
+                        </Template>
+                    </RadzenDataGridColumn>
+                    <RadzenDataGridColumn TItem="UtilityRowWithMatch" Title="Actions" Width="100px">
+                        <Template Context="r">
+                            <RadzenButton Size="ButtonSize.Small" ButtonStyle="ButtonStyle.Light" Icon="clear" Text="Clear" Click="@(() => ClearAssign(r))" />
+                        </Template>
+                    </RadzenDataGridColumn>
+                </Columns>
+            </RadzenDataGrid>
+        </div>
+    </div>
+}
+
+@code {
+    private string? error;
+    private List<UtilityRowWithMatch>? rows;
+    private bool createPayments = true;
+    private bool createAliases = true;
+    private int selectedYear = DateTime.UtcNow.Year;
+    private List<int> years = new() { DateTime.UtcNow.Year, DateTime.UtcNow.Year + 1 };
+
+    private Dictionary<int, string> assignedNames = new();
+    private Dictionary<int, List<PersonListItem>> optionsByRow = new();
+
+    private async Task HandleSelected(InputFileChangeEventArgs e)
+    {
+        error = null;
+        rows = null;
+        try
+        {
+            var file = e.File;
+            if (file is null)
+            {
+                error = "No file selected.";
+                return;
+            }
+            if (file.ContentType != "application/pdf" && !file.Name.EndsWith(".pdf", StringComparison.OrdinalIgnoreCase))
+            {
+                error = "Please upload a PDF file.";
+                return;
+            }
+
+            await using var read = file.OpenReadStream(maxAllowedSize: 100 * 1024 * 1024);
+            var extracted = await UtilitySvc.ExtractAsync(read);
+            rows = await UtilitySvc.MatchAsync(extracted);
+
+            // Pre-fill assigned names for matched
+            foreach (var r in rows)
+            {
+                if (r.MatchedPersonId is int pid)
+                {
+                    r.AssignedPersonId = pid;
+                    if (!assignedNames.ContainsKey(pid))
+                    {
+                        assignedNames[pid] = r.MatchedPersonName ?? $"Person #{pid}";
+                    }
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            error = ex.Message;
+        }
+    }
+
+    private int? GetAssigned(UtilityRowWithMatch r) => r.AssignedPersonId ?? r.MatchedPersonId;
+
+    private List<PersonListItem> GetPersonOptions(UtilityRowWithMatch row)
+    {
+        if (rows is null) return new();
+        var i = rows.IndexOf(row);
+        if (i >= 0 && optionsByRow.TryGetValue(i, out var opts)) return opts;
+        return new();
+    }
+
+    private async Task LoadPersonOptions(UtilityRowWithMatch row, LoadDataArgs args)
+    {
+        var term = args.Filter;
+        if (string.IsNullOrWhiteSpace(term))
+        {
+            term = FirstWord(row.Name);
+        }
+        var list = await People.ListAsync(DateTime.UtcNow.Year, term);
+        if (rows is null) return;
+        var i = rows.IndexOf(row);
+        if (i >= 0)
+        {
+            optionsByRow[i] = list;
+            StateHasChanged();
+        }
+    }
+
+    private void OnAssignChanged(UtilityRowWithMatch row, object? value)
+    {
+        int? pid = value as int?;
+        if (pid is int id)
+        {
+            if (rows is null) return;
+            var i = rows.IndexOf(row);
+            if (i >= 0 && optionsByRow.TryGetValue(i, out var opts))
+            {
+                var opt = opts.FirstOrDefault(o => o.PersonId == id);
+                if (opt != null)
+                {
+                    var label = string.IsNullOrWhiteSpace(opt.Address) ? opt.FullName : $"{opt.FullName} — {opt.Address}";
+                    assignedNames[id] = label;
+                    row.MatchedPersonName = opt.FullName;
+                }
+            }
+        }
+    }
+
+    private async Task EnsurePrefilterLoaded(UtilityRowWithMatch row)
+    {
+        if (rows is null) return;
+        var i = rows.IndexOf(row);
+        if (i < 0) return;
+        if (optionsByRow.ContainsKey(i) && optionsByRow[i].Count > 0) return;
+
+        var term = FirstWord(row.Name);
+        var list = await People.ListAsync(DateTime.UtcNow.Year, term);
+        optionsByRow[i] = list;
+        StateHasChanged();
+    }
+
+    private void ClearAssign(UtilityRowWithMatch row)
+    {
+        // Clear both manual and auto match so the row returns to Unmatched
+        row.AssignedPersonId = null;
+        row.MatchedPersonId = null;
+        row.MatchedPersonName = null;
+        row.MatchType = null;
+        StateHasChanged();
+    }
+
+    private static string? FirstWord(string? name)
+    {
+        if (string.IsNullOrWhiteSpace(name)) return null;
+        var t = name.Trim();
+        // Split on comma or whitespace, take the first token
+        var parts = t.Split(new[] { ' ', '\t', ',', ';' }, StringSplitOptions.RemoveEmptyEntries);
+        return parts.Length > 0 ? parts[0] : null;
+    }
+
+    private void Clear()
+    {
+        error = null;
+        rows = null;
+    }
+
+    private async Task Process()
+    {
+        if (rows is null || rows.Count == 0) return;
+        try
+        {
+            var req = new ProcessRequest
+            {
+                Rows = rows,
+                CreateAliasOnManualAssign = createAliases,
+                CreatePayments = createPayments,
+                AllocationYear = selectedYear
+            };
+
+            var res = await UtilitySvc.ProcessAsync(req);
+            Toaster.Notify(new NotificationMessage
+            {
+                Severity = NotificationSeverity.Success,
+                Summary = "Processed",
+                Detail = $"Notices: {res.CreatedNotices}, Payments: {res.CreatedPayments}, Aliases: {res.CreatedAliases}",
+                Duration = 4000
+            });
+            Clear();
+        }
+        catch (ValidationException vex)
+        {
+            error = vex.Message;
+        }
+        catch (Exception ex)
+        {
+            error = ex.Message;
+        }
+    }
+}

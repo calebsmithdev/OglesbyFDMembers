@@ -24,6 +24,9 @@ builder.Services.AddScoped<OglesbyFDMembers.App.Services.FeeScheduleService>();
 builder.Services.AddScoped<OglesbyFDMembers.App.Services.PeopleService>();
 builder.Services.AddScoped<OglesbyFDMembers.App.Services.PaymentsService>();
 builder.Services.AddScoped<OglesbyFDMembers.App.Services.RolloverService>();
+builder.Services.AddScoped<OglesbyFDMembers.App.Services.IPdfUtilityExtractor, OglesbyFDMembers.App.Services.PdfUtilityExtractor>();
+builder.Services.AddScoped<OglesbyFDMembers.App.Services.IUtilityImportService, OglesbyFDMembers.App.Services.UtilityImportService>();
+builder.Services.AddScoped<OglesbyFDMembers.App.Services.UtilityNoticeService>();
 
 // Background jobs
 builder.Services.AddHostedService<OglesbyFDMembers.App.Background.DailyAssessmentJob>();

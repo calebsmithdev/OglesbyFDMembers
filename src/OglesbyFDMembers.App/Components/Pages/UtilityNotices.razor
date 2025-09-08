@@ -1,0 +1,193 @@
+@page "/utility-notices"
+@using OglesbyFDMembers.App.Services
+@inject UtilityNoticeService Notices
+@inject PeopleService People
+@inject NotificationService Toaster
+
+<h3>Utility Notices</h3>
+
+<div class="d-flex align-items-center gap-2 mb-3">
+    <RadzenDropDown TValue="NoticeFilter" Data="Enum.GetValues<NoticeFilter>()" @bind-Value="filter" Style="width: 180px" />
+    <RadzenTextBox Placeholder="Search name..." Style="width: 240px" @bind-Value="search" Change="@(async _ => await LoadAsync())" />
+    <RadzenButton Text="Refresh" Click="@(async _ => await LoadAsync())" ButtonStyle="ButtonStyle.Light" />
+    <div class="ms-auto text-muted">Total: @items.Count</div>
+    <div class="form-check form-switch ms-3">
+        <input class="form-check-input" type="checkbox" id="aliasSwitch2" @bind="createAliasOnAssign">
+        <label class="form-check-label" for="aliasSwitch2">Alias on manual assign</label>
+    </div>
+    <div class="form-check form-switch ms-3">
+        <input class="form-check-input" type="checkbox" id="prefilterSwitch" @bind="prefilterByFirstWord">
+        <label class="form-check-label" for="prefilterSwitch">Prefilter by first word</label>
+    </div>
+    <RadzenButton Text="Clear Filters" Click="@ClearFilters" ButtonStyle="ButtonStyle.Light" />
+    <RadzenButton Text="Load" Click="@(async _ => await LoadAsync())" ButtonStyle="ButtonStyle.Primary" />
+    
+</div>
+
+<RadzenDataGrid Data="items" TItem="UtilityNoticeItem" AllowPaging PageSize="15" RowHeight="34" RowRender="@RowRender">
+    <Columns>
+        <RadzenDataGridColumn TItem="UtilityNoticeItem" Title="Original (Import)" Width="26%">
+            <Template Context="r">@r.PayerNameRaw</Template>
+        </RadzenDataGridColumn>
+        <RadzenDataGridColumn TItem="UtilityNoticeItem" Title="Assigned At Import" Width="26%">
+            <Template Context="r">@(string.IsNullOrWhiteSpace(r.OriginalFullName) ? "—" : r.OriginalFullName)</Template>
+        </RadzenDataGridColumn>
+        <RadzenDataGridColumn TItem="UtilityNoticeItem" Title="Amount" Width="110px">
+            <Template Context="r">@r.Amount.ToString("C")</Template>
+        </RadzenDataGridColumn>
+        <RadzenDataGridColumn TItem="UtilityNoticeItem" Property="ImportedUtc" Title="Imported" Width="150px">
+            <Template Context="r">@r.ImportedUtc.ToLocalTime().ToString("g")</Template>
+        </RadzenDataGridColumn>
+        <RadzenDataGridColumn TItem="UtilityNoticeItem" Title="Matched" Width="22%">
+            <Template Context="r">
+                @if (r.MatchedPersonId is int pid)
+                {
+                    <span>@(assignedNames.GetValueOrDefault(r.Id) ?? r.MatchedPersonName ?? $"Person #{pid}")</span>
+                    <span class="text-muted small ms-2">(Auto)</span>
+                }
+                else
+                {
+                    <span class="text-danger">Unmatched</span>
+                }
+            </Template>
+        </RadzenDataGridColumn>
+        <RadzenDataGridColumn TItem="UtilityNoticeItem" Title="Assign" Width="22%">
+            <Template Context="r">
+                <RadzenDropDownDataGrid @bind-Value="r.MatchedPersonId"
+                                        TValue="int?"
+                                        Data="@GetPersonOptions(r)"
+                                        LoadData="@(args => LoadPersonOptions(r, args))"
+                                        TextProperty="FullName"
+                                        ValueProperty="PersonId"
+                                        AllowFiltering="true"
+                                        FilterCaseSensitivity="FilterCaseSensitivity.CaseInsensitive"
+                                        Placeholder="Select person..."
+                                        Open="@(() => EnsurePrefilterLoaded(r))"
+                                        Change="@(args => OnAssignChanged(r, args))"
+                                        Style="width:100%">
+                    <Columns>
+                        <RadzenDropDownDataGridColumn Property="FullName" Title="Name" Width="40%" />
+                        <RadzenDropDownDataGridColumn Property="Address" Title="Address" Width="60%" />
+                    </Columns>
+                </RadzenDropDownDataGrid>
+            </Template>
+        </RadzenDataGridColumn>
+        <RadzenDataGridColumn TItem="UtilityNoticeItem" Title="Actions" Width="120px">
+            <Template Context="r">
+                <RadzenButton Size="ButtonSize.Small" ButtonStyle="ButtonStyle.Light" Icon="clear" Text="Clear" Click="@(() => ClearAssign(r))" />
+                <RadzenButton class="ms-1" Size="ButtonSize.Small" ButtonStyle="ButtonStyle.Primary" Icon="save" Text="Save" Click="@(() => SaveAssign(r))" />
+            </Template>
+        </RadzenDataGridColumn>
+    </Columns>
+    <EmptyTemplate>
+        <div class="text-muted">No notices found.</div>
+    </EmptyTemplate>
+</RadzenDataGrid>
+
+@code {
+    private NoticeFilter filter = NoticeFilter.All;
+    private string? search;
+    private bool createAliasOnAssign = true;
+    private bool prefilterByFirstWord = true;
+    private List<UtilityNoticeItem> items = new();
+    private Dictionary<int, List<PersonListItem>> optionsByRow = new(); // key: notice Id
+    private Dictionary<int, string> assignedNames = new(); // key: notice Id -> display label
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadAsync();
+    }
+
+    private async Task LoadAsync()
+    {
+        items = await Notices.ListAsync(filter, search);
+        optionsByRow.Clear();
+        assignedNames.Clear();
+        StateHasChanged();
+    }
+
+    private List<PersonListItem> GetPersonOptions(UtilityNoticeItem row)
+    {
+        if (optionsByRow.TryGetValue(row.Id, out var opts)) return opts;
+        return new();
+    }
+
+    private async Task LoadPersonOptions(UtilityNoticeItem row, LoadDataArgs args)
+    {
+        var term = args.Filter;
+        if (string.IsNullOrWhiteSpace(term) && prefilterByFirstWord)
+        {
+            term = FirstWord(row.PayerNameRaw);
+        }
+        var list = await People.ListAsync(DateTime.UtcNow.Year, term);
+        optionsByRow[row.Id] = list;
+        StateHasChanged();
+    }
+
+    private async Task EnsurePrefilterLoaded(UtilityNoticeItem row)
+    {
+        if (optionsByRow.ContainsKey(row.Id) && optionsByRow[row.Id].Count > 0) return;
+        var term = prefilterByFirstWord ? FirstWord(row.PayerNameRaw) : null;
+        var list = await People.ListAsync(DateTime.UtcNow.Year, term);
+        optionsByRow[row.Id] = list;
+        StateHasChanged();
+    }
+
+    private void OnAssignChanged(UtilityNoticeItem row, object? value)
+    {
+        int? pid = value as int?;
+        if (pid is int id)
+        {
+            if (optionsByRow.TryGetValue(row.Id, out var opts))
+            {
+                var opt = opts.FirstOrDefault(o => o.PersonId == id);
+                if (opt != null)
+                {
+                    var label = string.IsNullOrWhiteSpace(opt.Address) ? opt.FullName : $"{opt.FullName} — {opt.Address}";
+                    assignedNames[row.Id] = label;
+                }
+            }
+        }
+    }
+
+    private void ClearAssign(UtilityNoticeItem row)
+    {
+        row.MatchedPersonId = null;
+        row.MatchedPersonName = null;
+        assignedNames.Remove(row.Id);
+    }
+
+    private async Task SaveAssign(UtilityNoticeItem row)
+    {
+        await Notices.UpdateMatchAsync(row.Id, row.MatchedPersonId, createAliasOnAssign);
+        Toaster.Notify(new NotificationMessage
+        {
+            Severity = NotificationSeverity.Success,
+            Summary = "Saved",
+            Detail = row.MatchedPersonId == null ? "Cleared match" : "Match updated",
+            Duration = 2500
+        });
+    }
+
+    private void ClearFilters()
+    {
+        filter = NoticeFilter.All;
+        search = null;
+    }
+
+    void RowRender(RowRenderEventArgs<UtilityNoticeItem> args)
+    {
+        if (args.Data.MatchedPersonId == null)
+        {
+            args.Attributes["class"] = "table-warning";
+        }
+    }
+
+    private static string? FirstWord(string? name)
+    {
+        if (string.IsNullOrWhiteSpace(name)) return null;
+        var t = name.Trim();
+        var parts = t.Split(new[] { ' ', '\t', ',', ';' }, StringSplitOptions.RemoveEmptyEntries);
+        return parts.Length > 0 ? parts[0] : null;
+    }
+}
