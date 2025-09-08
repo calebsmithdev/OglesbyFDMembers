@@ -10,15 +10,17 @@ using OglesbyFDMembers.Domain.Entities;
 
 namespace OglesbyFDMembers.App.Services;
 
-public class UtilityNoticeService
+public class VvecNoticeService
 {
     private readonly AppDbContext _db;
     private readonly PeopleService _people;
+    private readonly PaymentsService _payments;
 
-    public UtilityNoticeService(AppDbContext db, PeopleService people)
+    public VvecNoticeService(AppDbContext db, PeopleService people, PaymentsService payments)
     {
         _db = db;
         _people = people;
+        _payments = payments;
     }
 
     public async Task<List<UtilityNoticeItem>> ListAsync(NoticeFilter filter, string? search = null, CancellationToken ct = default)
@@ -87,6 +89,22 @@ public class UtilityNoticeService
             {
                 await _people.AddAliasAsync(pid, alias, PersonAliasType.VVEC, ct);
             }
+        }
+
+        // If newly matched and not yet processed, create a VVEC payment and allocate.
+        if (personId is int mpId && notice.IsAllocated == false)
+        {
+            var paymentId = await _payments.CreateAndAllocateAsync(new AddPaymentRequest
+            {
+                PersonId = mpId,
+                Amount = notice.Amount,
+                PaymentType = Domain.Enums.PaymentType.VVEC,
+                Notes = $"VVEC notice: {notice.PayerNameRaw} {DateTime.UtcNow:yyyy-MM-dd}",
+                AllocationMode = AllocationMode.SplitAcrossAll,
+                AllocationYear = DateTime.UtcNow.Year
+            }, ct);
+            notice.IsAllocated = true;
+            notice.PaymentId = paymentId;
         }
 
         await _db.SaveChangesAsync(ct);

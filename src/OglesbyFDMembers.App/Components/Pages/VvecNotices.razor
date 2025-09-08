@@ -1,10 +1,10 @@
-@page "/utility-notices"
+@page "/vvec-notices"
 @using OglesbyFDMembers.App.Services
-@inject UtilityNoticeService Notices
+@inject VvecNoticeService Notices
 @inject PeopleService People
 @inject NotificationService Toaster
 
-<h3>Utility Notices</h3>
+<h3>VVEC Notices</h3>
 
 <div class="d-flex align-items-center gap-2 mb-3">
     <RadzenDropDown TValue="NoticeFilter" Data="Enum.GetValues<NoticeFilter>()" @bind-Value="filter" Style="width: 180px" />
@@ -28,9 +28,6 @@
     <Columns>
         <RadzenDataGridColumn TItem="UtilityNoticeItem" Title="Original (Import)" Width="26%">
             <Template Context="r">@r.PayerNameRaw</Template>
-        </RadzenDataGridColumn>
-        <RadzenDataGridColumn TItem="UtilityNoticeItem" Title="Assigned At Import" Width="26%">
-            <Template Context="r">@(string.IsNullOrWhiteSpace(r.OriginalFullName) ? "—" : r.OriginalFullName)</Template>
         </RadzenDataGridColumn>
         <RadzenDataGridColumn TItem="UtilityNoticeItem" Title="Amount" Width="110px">
             <Template Context="r">@r.Amount.ToString("C")</Template>

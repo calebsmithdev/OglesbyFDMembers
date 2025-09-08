@@ -21,6 +21,10 @@ public class UtilityNoticeConfig : IEntityTypeConfiguration<UtilityNotice>
             .WithMany(p => p.MatchedUtilityNotices)
             .HasForeignKey(u => u.MatchedPersonId)
             .OnDelete(DeleteBehavior.Restrict);
+
+        builder.HasOne(u => u.Payment)
+            .WithMany()
+            .HasForeignKey(u => u.PaymentId)
+            .OnDelete(DeleteBehavior.Restrict);
     }
 }
-

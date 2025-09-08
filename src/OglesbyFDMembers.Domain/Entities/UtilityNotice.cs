@@ -28,7 +28,7 @@ public class UtilityNotice
     public DateTime ImportedUtc { get; set; }
 
     public int? MatchedPersonId { get; set; }
-    
+
     /// <summary>
     /// Snapshot of the person's full name that was chosen during import
     /// (auto or manual). Kept for audit even if the person's name changes later.
@@ -36,10 +36,17 @@ public class UtilityNotice
     [MaxLength(200)]
     public string? OriginalFullName { get; set; }
 
+    /// <summary>
+    /// When a payment is created from this notice, links to that Payment row
+    /// for auditability and idempotency.
+    /// </summary>
+    public int? PaymentId { get; set; }
+
     public bool IsAllocated { get; set; }
 
     public bool NeedsReview { get; set; }
 
     // Navigation
     public Person? MatchedPerson { get; set; }
+    public Payment? Payment { get; set; }
 }

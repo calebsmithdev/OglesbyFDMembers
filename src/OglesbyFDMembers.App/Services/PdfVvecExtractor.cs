@@ -5,12 +5,12 @@ using UglyToad.PdfPig.Content;
 
 namespace OglesbyFDMembers.App.Services;
 
-public interface IPdfUtilityExtractor
+public interface IPdfVvecExtractor
 {
     Task<List<UtilityRow>> ExtractAsync(Stream pdfStream, CancellationToken ct = default);
 }
 
-public sealed class PdfUtilityExtractor : IPdfUtilityExtractor
+public sealed class PdfVvecExtractor : IPdfVvecExtractor
 {
     public async Task<List<UtilityRow>> ExtractAsync(Stream pdfStream, CancellationToken ct = default)
     {

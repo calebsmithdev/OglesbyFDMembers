@@ -11,21 +11,21 @@ using OglesbyFDMembers.Domain.Enums;
 
 namespace OglesbyFDMembers.App.Services;
 
-public interface IUtilityImportService
+public interface IVvecImportService
 {
     Task<List<UtilityRow>> ExtractAsync(Stream pdf, CancellationToken ct = default);
     Task<List<UtilityRowWithMatch>> MatchAsync(List<UtilityRow> rows, CancellationToken ct = default);
     Task<ProcessResult> ProcessAsync(ProcessRequest request, CancellationToken ct = default);
 }
 
-public class UtilityImportService : IUtilityImportService
+public class VvecImportService : IVvecImportService
 {
     private readonly AppDbContext _db;
-    private readonly IPdfUtilityExtractor _extractor;
+    private readonly IPdfVvecExtractor _extractor;
     private readonly PaymentsService _payments;
     private readonly PeopleService _people;
 
-    public UtilityImportService(AppDbContext db, IPdfUtilityExtractor extractor, PaymentsService payments, PeopleService people)
+    public VvecImportService(AppDbContext db, IPdfVvecExtractor extractor, PaymentsService payments, PeopleService people)
     {
         _db = db;
         _extractor = extractor;
@@ -150,15 +150,17 @@ public class UtilityImportService : IUtilityImportService
 
                 if (request.CreatePayments)
                 {
-                    await _payments.CreateAndAllocateAsync(new AddPaymentRequest
+                    var newPaymentId = await _payments.CreateAndAllocateAsync(new AddPaymentRequest
                     {
                         PersonId = personId,
                         Amount = row.Amount,
-                        PaymentType = PaymentType.Utility,
-                        Notes = $"Utility import: {row.Name} {now:yyyy-MM-dd}",
+                        PaymentType = PaymentType.VVEC,
+                        Notes = $"VVEC import: {row.Name} {now:yyyy-MM-dd}",
                         AllocationMode = AllocationMode.SplitAcrossAll,
                         AllocationYear = request.AllocationYear ?? DateTime.UtcNow.Year
                     }, ct);
+                    notice.IsAllocated = true;
+                    notice.PaymentId = newPaymentId;
                     createdPayments++;
                 }
             }

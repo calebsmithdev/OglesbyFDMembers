@@ -1,12 +1,12 @@
-@page "/utility-import"
+@page "/vvec-import"
 @using OglesbyFDMembers.App.Services
 @using System.ComponentModel.DataAnnotations
-@inject IUtilityImportService UtilitySvc
+@inject IVvecImportService UtilitySvc
 @inject PeopleService People
 @inject DialogService Dialogs
 @inject NotificationService Toaster
 
-<h3>Import Utility Payments</h3>
+<h3>Import VVEC Payments</h3>
 
 <div class="mb-3">
     <InputFile OnChange="HandleSelected" accept="application/pdf,.pdf" />
