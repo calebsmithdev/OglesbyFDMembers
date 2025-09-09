@@ -1,5 +1,6 @@
-@page "/people/{id:int}"
+@page "/members/{id:int}"
 @using OglesbyFDMembers.App.Services
+@using Microsoft.AspNetCore.WebUtilities
 @inject PeopleService PeopleSvc
 @inject Radzen.NotificationService Notifications
 @inject NavigationManager Nav
@@ -243,6 +244,7 @@ else
     private OglesbyFDMembers.App.Services.PersonDetails? details;
     private List<OglesbyFDMembers.App.Services.PaymentListItem> payments = new();
     private bool paymentsLoading = false;
+    private bool initialActionHandled = false;
 
     protected override async Task OnParametersSetAsync()
     {
@@ -251,6 +253,33 @@ else
         {
             details = await PeopleSvc.GetDetailsAsync(id);
             await LoadPaymentsAsync();
+
+            // Handle optional quick action requested via query string, once
+            if (!initialActionHandled)
+            {
+                var uri = Nav.ToAbsoluteUri(Nav.Uri);
+                if (!string.IsNullOrEmpty(uri.Query))
+                {
+                    var query = QueryHelpers.ParseQuery(uri.Query);
+                    if (query.TryGetValue("action", out var actionVals))
+                    {
+                        var action = actionVals.FirstOrDefault();
+                        switch (action)
+                        {
+                            case "add-payment":
+                                await OpenAddPaymentDialog();
+                                break;
+                            case "add-address":
+                                await OpenAddAddressSidebar();
+                                break;
+                            case "add-property":
+                                await OpenAddPropertyDialog();
+                                break;
+                        }
+                    }
+                }
+                initialActionHandled = true;
+            }
         }
         catch (Exception ex)
         {

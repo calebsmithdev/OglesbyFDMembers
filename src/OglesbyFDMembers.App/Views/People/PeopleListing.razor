@@ -2,35 +2,19 @@
 @using OglesbyFDMembers.App.Services
 @inject PeopleService PeopleSvc
 @inject NavigationManager Nav
-@inject Radzen.NotificationService Notifications
+@inject NotificationService Notifications
 
-<h1>People</h1>
+<h1>Members</h1>
+<p>
+    Listing of people who are active and inactive members of Oglesby Fire Department.
+</p>
 
-<RadzenRow Wrap="FlexWrap.Wrap" Gap="1rem" Style="margin-bottom: 1rem; align-items:flex-end;">
+<RadzenRow Wrap="FlexWrap.Wrap" Gap="1rem" Style="margin-bottom: 1rem; align-items:flex-end; margin-top: 2rem">
     <RadzenColumn Size="12" SizeSM="8" SizeMD="6" SizeLG="4">
         <RadzenFormField Text="Year" Variant="Variant.Outlined" Style="width:100%">
             <ChildContent>
                 <RadzenDropDown Data="years" @bind-Value="year" TValue="int" Style="width:100%"
                                  Placeholder="Select year" Change="@(async _ => await LoadAsync())"/>
-            </ChildContent>
-        </RadzenFormField>
-    </RadzenColumn>
-    <RadzenColumn Size="12" SizeSM="8" SizeMD="6" SizeLG="4">
-        <RadzenFormField Text="Search" Variant="Variant.Outlined" Style="width:100%">
-            <ChildContent>
-                <div style="display:flex; align-items:center; gap:.5rem; width:100%;">
-                    <RadzenTextBox @bind-Value="search" Style="flex:1 1 auto; width:100%" Placeholder="Name or any address"
-                                   Debounce="true" Delay="300"
-                                   Change="@(async _ => await LoadAsync())" />
-                    @if (!string.IsNullOrWhiteSpace(search))
-                    {
-                        <RadzenButton Icon="close" ButtonStyle="ButtonStyle.Light" Size="ButtonSize.Small" Click="@ClearSearch" Title="Clear" />
-                    }
-                    @if (loading)
-                    {
-                        <RadzenProgressBar ShowValue="false" Mode="ProgressBarMode.Indeterminate" Style="width:60px;height:8px;" />
-                    }
-                </div>
             </ChildContent>
         </RadzenFormField>
     </RadzenColumn>
@@ -47,26 +31,30 @@
     </RadzenColumn>
 </RadzenRow>
 
-<RadzenDataGrid @ref="grid" Data="people" TItem="PersonListItem" RowHeight="38" AllowSorting AllowPaging AllowFiltering="false" PageSize="25">
+<RadzenDataGrid @ref="grid" Data="people" TItem="PersonListItem" AllowColumnResize AllowSorting AllowPaging ShowPagingSummary
+                ColumnWidth="300px" AllowFiltering PageSize="25">
     <Columns>
-        <RadzenDataGridColumn TItem="PersonListItem" Title="" Width="90px">
-            <Template Context="item">
-                <RadzenButton Text="View" Icon="visibility" Size="ButtonSize.Small" ButtonStyle="ButtonStyle.Light" Click="@(() => ViewPerson(item.PersonId))" />
-            </Template>
-            <HeaderTemplate>
-                <span></span>
-            </HeaderTemplate>
-            <FooterTemplate>
-                <span></span>
-            </FooterTemplate>
-        </RadzenDataGridColumn>
-        <RadzenDataGridColumn TItem="PersonListItem" Property="FullName" Title="Name" Width="220px" />
-        <RadzenDataGridColumn TItem="PersonListItem" Property="Address" Title="Address" Width="340px" />
+        <RadzenDataGridColumn TItem="PersonListItem" Property="FullName" FilterProperty="FirstName" Title="Name" Width="220px" />
+        <RadzenDataGridColumn TItem="PersonListItem" Property="Address" Title="Address" Width="370px" />
         <RadzenDataGridColumn TItem="PersonListItem" Property="Phone" Title="Phone" Width="140px" />
         <RadzenDataGridColumn TItem="PersonListItem" Property="Email" Title="Email" Width="220px" />
-        <RadzenDataGridColumn TItem="PersonListItem" Title="Payment Status">
+        <RadzenDataGridColumn TItem="PersonListItem" Title="Payment Status" Width="250px" Filterable="false">
             <Template Context="item">
                 @PaymentStatusTemplate(item)
+            </Template>
+        </RadzenDataGridColumn>
+        <RadzenDataGridColumn TItem="PersonListItem" Title="" Width="100px" Frozen="true" FrozenPosition="FrozenColumnPosition.Right" Filterable="false" Sortable="false" Resizable="false">
+            <Template Context="item">
+                <div @onclick:stopPropagation="true" style="display:flex; justify-content:flex-end;">
+                    <RadzenSplitButton ButtonStyle="ButtonStyle.Light" Size="ButtonSize.ExtraSmall" Text="View" Value=""
+                                        Click="@(args => OnClickViewDetails(item.PersonId, args?.Value?.ToString()))">
+                        <ChildContent>
+                            <RadzenSplitButtonItem Text="Add Payment" Value="add-payment" Icon="payments" />
+                            <RadzenSplitButtonItem Text="Add Address" Value="add-address" Icon="home" />
+                            <RadzenSplitButtonItem Text="Add Property" Value="add-property" Icon="add_home" />
+                        </ChildContent>
+                    </RadzenSplitButton>
+                </div>
             </Template>
         </RadzenDataGridColumn>
     </Columns>
@@ -108,11 +96,6 @@
     {
         search = null;
         await LoadAsync();
-    }
-
-    private void ViewPerson(int personId)
-    {
-        Nav.NavigateTo($"/people/{personId}");
     }
 
     private async Task OnExportAction(string? val)
@@ -176,4 +159,15 @@
             builder.CloseElement();
         }
     };
+
+    private void OnClickViewDetails(int personId, string? action)
+    {
+        if (string.IsNullOrWhiteSpace(action))
+        {
+            Nav.NavigateTo($"/members/{personId}");
+            return;
+        }
+        
+        Nav.NavigateTo($"/members/{personId}?action={Uri.EscapeDataString(action)}");
+    }
 }
