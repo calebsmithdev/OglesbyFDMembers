@@ -1,0 +1,84 @@
+@using System.ComponentModel.DataAnnotations
+@inject Radzen.DialogService Dialogs
+@inject Radzen.NotificationService Notifications
+@inject OglesbyFDMembers.App.Services.FeeScheduleService FeeSvc
+
+<div style="padding: 1rem;">
+    <h4 style="margin-top:0;">Add Fee Schedule</h4>
+
+    <RadzenTemplateForm TItem="AddFeeModel" Data="model" Submit="HandleSubmit">
+        <div class="row g-2">
+            <div class="col-12 col-sm-6">
+                <RadzenTextBox Name="Year" @bind-Value="model.YearText" Placeholder="Year (e.g., 2025)" Style="width:100%" />
+                <RadzenRequiredValidator Component="Year" Text="Year is required" />
+                <RadzenRegexValidator Component="Year" Pattern="^\\d{4}$" Text="Enter a valid 4-digit year" />
+            </div>
+            <div class="col-12 col-sm-6">
+                <RadzenNumeric Name="Amount" @bind-Value="model.Amount" Step="0.01" Style="width:100%" />
+                <RadzenDataAnnotationValidator Component="Amount" />
+            </div>
+        </div>
+
+        <div class="d-flex justify-content-end" style="margin-top: 1rem; gap: .5rem;">
+            <RadzenButton Text="Cancel" ButtonStyle="ButtonStyle.Light" Click="@(() => Dialogs.Close(false))" />
+            <RadzenButton Text="Save" Icon="save" ButtonStyle="ButtonStyle.Primary" Type="ButtonType.Submit" />
+        </div>
+    </RadzenTemplateForm>
+</div>
+
+@code {
+    private AddFeeModel model = new()
+    {
+        YearText = DateTime.Now.Year.ToString(),
+        Amount = 0m
+    };
+
+    private async Task HandleSubmit(AddFeeModel _)
+    {
+        try
+        {
+            if (!int.TryParse(model.YearText, out var year))
+            {
+                Notifications.Notify(new NotificationMessage
+                {
+                    Severity = NotificationSeverity.Warning,
+                    Summary = "Invalid year",
+                    Detail = "Please enter a valid 4-digit year.",
+                    Duration = 3000
+                });
+                return;
+            }
+
+            await FeeSvc.SetAsync(year, model.Amount);
+            Notifications.Notify(new NotificationMessage
+            {
+                Severity = NotificationSeverity.Success,
+                Summary = "Saved",
+                Detail = $"Fee for {year} set to {model.Amount:C}.",
+                Duration = 3000
+            });
+            Dialogs.Close(true);
+        }
+        catch (Exception ex)
+        {
+            Notifications.Notify(new NotificationMessage
+            {
+                Severity = NotificationSeverity.Error,
+                Summary = "Failed to save",
+                Detail = ex.Message,
+                Duration = 5000
+            });
+        }
+    }
+
+    private class AddFeeModel
+    {
+        [Required]
+        [RegularExpression(@"^\\d{4}$")]
+        public string YearText { get; set; } = string.Empty;
+
+        [Range(typeof(decimal), "0.01", "10000000", ErrorMessage = "Amount must be greater than $0.00")]
+        public decimal Amount { get; set; }
+    }
+}
+

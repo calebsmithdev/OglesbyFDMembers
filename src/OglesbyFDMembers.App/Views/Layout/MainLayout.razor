@@ -2,16 +2,21 @@
 
 <RadzenLayout>
     <RadzenHeader>
-        <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" Gap="0">
-            <RadzenSidebarToggle Click="@(() => sidebarExpanded = !sidebarExpanded)" />
-            <RadzenLabel Text="Oglesby Fire Department Members" />
+        <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" JustifyContent="JustifyContent.SpaceBetween" Gap="0">
+            <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" Gap="0">
+                <RadzenSidebarToggle Click="@(() => sidebarExpanded = !sidebarExpanded)"/>
+                <RadzenLabel Text="Oglesby Fire Department Members"/>
+            </RadzenStack>
+            <div class="rz-mr-2">
+                <RadzenAppearanceToggle/>
+            </div>
         </RadzenStack>
     </RadzenHeader>
     <RadzenSidebar @bind-Expanded="@sidebarExpanded">
         <Sidebar />
     </RadzenSidebar>
     <RadzenBody>
-        <div class="rz-p-4">
+        <div class="rz-p-5">
             @Body
         </div>
     </RadzenBody>

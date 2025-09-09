@@ -1,0 +1,75 @@
+@using System.ComponentModel.DataAnnotations
+@inject DialogService Dialogs
+@inject NotificationService Notifications
+@inject Services.FeeScheduleService FeeSvc
+
+<div>
+    <RadzenTemplateForm TItem="EditFeeModel" Data="model" Submit="HandleSubmit">
+        <div class="row g-2">
+            <div class="col-12">
+                <RadzenNumeric Name="Year" @bind-Value="model.Year" Disabled="true" Style="width:100%" />
+            </div>
+            <div class="col-12">
+                <RadzenNumeric Name="Amount" @bind-Value="model.Amount" Step="0.01" Style="width:100%" />
+                <RadzenDataAnnotationValidator Component="Amount" />
+            </div>
+        </div>
+
+        <div class="d-flex justify-content-end" style="margin-top: 2rem; gap: .5rem;">
+            <RadzenButton Text="Cancel" ButtonStyle="ButtonStyle.Light" Click="@(() => Dialogs.Close(false))" />
+            <RadzenButton Text="Save" Icon="save" ButtonStyle="ButtonStyle.Primary" Type="ButtonType.Submit" />
+        </div>
+    </RadzenTemplateForm>
+</div>
+
+@code {
+    [Parameter]
+    public int Year { get; set; }
+
+    [Parameter]
+    public decimal Amount { get; set; }
+
+    private EditFeeModel model = new();
+
+    protected override void OnInitialized()
+    {
+        model.Year = Year;
+        model.Amount = Amount;
+    }
+
+    private async Task HandleSubmit(EditFeeModel _)
+    {
+        try
+        {
+            await FeeSvc.SetAsync(model.Year, model.Amount);
+            Notifications.Notify(new NotificationMessage
+            {
+                Severity = NotificationSeverity.Success,
+                Summary = "Saved",
+                Detail = $"Fee for {model.Year} set to {model.Amount:C}.",
+                Duration = 3000
+            });
+            Dialogs.Close(true);
+        }
+        catch (Exception ex)
+        {
+            Notifications.Notify(new NotificationMessage
+            {
+                Severity = NotificationSeverity.Error,
+                Summary = "Failed to save",
+                Detail = ex.Message,
+                Duration = 5000
+            });
+        }
+    }
+
+    private class EditFeeModel
+    {
+        [Range(1900,2100)]
+        public int Year { get; set; }
+
+        [Range(typeof(decimal), "0.01", "10000000", ErrorMessage = "Amount must be greater than $0.00")]
+        public decimal Amount { get; set; }
+    }
+}
+
