@@ -1,0 +1,14 @@
+<RadzenPanelMenu>
+    <RadzenPanelMenuItem Text="Home" Icon="home" Path="/" />
+    <RadzenPanelMenuItem Text="Members" Icon="group" Match="NavLinkMatch.Prefix">
+        <RadzenPanelMenuItem Text="Members List" Icon="group_search" Path="/members" Match="NavLinkMatch.All" />
+        <RadzenPanelMenuItem Text="Add Member" Icon="person_add" Path="/members/new" Match="NavLinkMatch.All"/>
+    </RadzenPanelMenuItem>
+    <RadzenPanelMenuItem Text="VVEC" Icon="recent_patient" Match="NavLinkMatch.Prefix">
+        <RadzenPanelMenuItem Text="VVEC Payments" Icon="receipt_long" Path="/vvec" Match="NavLinkMatch.All" />
+        <RadzenPanelMenuItem Text="VVEC Import" Icon="chat_paste_go" Path="/vvec/import" Match="NavLinkMatch.All"/>
+    </RadzenPanelMenuItem>
+    <RadzenPanelMenuItem Text="Settings" Icon="settings" Match="NavLinkMatch.Prefix">
+        <RadzenPanelMenuItem Text="Annual Fee Schedule" Icon="calendar_month" Path="/settings/fee-schedule" Match="NavLinkMatch.All" />
+    </RadzenPanelMenuItem>
+</RadzenPanelMenu>

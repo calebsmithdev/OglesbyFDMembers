@@ -1,6 +1,6 @@
 using Mediator;
 using Microsoft.EntityFrameworkCore;
-using OglesbyFDMembers.App.Components;
+using OglesbyFDMembers.App.Views;
 using OglesbyFDMembers.Data;
 using Radzen;
 

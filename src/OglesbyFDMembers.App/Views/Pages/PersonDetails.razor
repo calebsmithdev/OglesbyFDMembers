@@ -1,5 +1,4 @@
 @page "/people/{id:int}"
-@using OglesbyFDMembers.App.Components.People
 @using OglesbyFDMembers.App.Services
 @inject PeopleService PeopleSvc
 @inject Radzen.NotificationService Notifications
@@ -378,7 +377,7 @@ else
 
     private async Task OpenEditPersonDialog()
     {
-        var result = await Dialogs.OpenAsync<OglesbyFDMembers.App.Components.People.EditPersonDialog>(
+        var result = await Dialogs.OpenAsync<OglesbyFDMembers.App.Views.People.EditPersonDialog>(
             "Edit Person",
             new Dictionary<string, object?>
             {
@@ -401,7 +400,7 @@ else
 
     private async Task OpenAddPaymentDialog()
     {
-        var result = await Dialogs.OpenAsync<OglesbyFDMembers.App.Components.Payments.AddPaymentDialog>(
+        var result = await Dialogs.OpenAsync<OglesbyFDMembers.App.Views.Payments.AddPaymentDialog>(
             "Add Payment",
             new Dictionary<string, object?>
             {
@@ -424,7 +423,7 @@ else
 
     private async Task OpenAddPropertyDialog()
     {
-        var result = await Dialogs.OpenAsync<OglesbyFDMembers.App.Components.People.AddPropertyDialog>(
+        var result = await Dialogs.OpenAsync<OglesbyFDMembers.App.Views.People.AddPropertyDialog>(
             "Add Property",
             new Dictionary<string, object?>
             {
@@ -447,7 +446,7 @@ else
 
     private async Task OpenAddAliasDialog()
     {
-        var result = await Dialogs.OpenAsync<OglesbyFDMembers.App.Components.People.AddAliasDialog>(
+        var result = await Dialogs.OpenAsync<OglesbyFDMembers.App.Views.People.AddAliasDialog>(
             "Add Alias",
             new Dictionary<string, object?>
             {
