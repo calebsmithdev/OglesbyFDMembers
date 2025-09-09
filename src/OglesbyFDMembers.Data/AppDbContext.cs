@@ -20,6 +20,7 @@ public class AppDbContext : DbContext
     public DbSet<Payment> Payments => Set<Payment>();
     public DbSet<PaymentAllocation> PaymentAllocations => Set<PaymentAllocation>();
     public DbSet<UtilityNotice> UtilityNotices => Set<UtilityNotice>();
+    public DbSet<OglesbyFDMembers.Domain.Entities.AppSetting> AppSettings => Set<OglesbyFDMembers.Domain.Entities.AppSetting>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -35,4 +36,3 @@ public class AppDbContext : DbContext
         base.OnModelCreating(modelBuilder);
     }
 }
-

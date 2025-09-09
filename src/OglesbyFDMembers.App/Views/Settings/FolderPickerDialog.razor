@@ -1,0 +1,146 @@
+@using System.Runtime.InteropServices
+@inject DialogService Dialogs
+@inject NotificationService Notifications
+
+<h4 style="margin-top:0;">Choose Backup Folder</h4>
+
+<div class="row g-2" style="margin-bottom: .5rem;">
+    <div class="col-9">
+        <RadzenTextBox @bind-Value="currentPath" Style="width:100%" />
+    </div>
+    <div class="col-3">
+        <RadzenButton Text="Go" Click="GoToPath" Icon="folder_managed" Style="width:100%" />
+    </div>
+</div>
+
+<div class="d-flex justify-content-between" style="margin-bottom: .5rem;">
+    <div>
+        <RadzenButton Text="Up" Icon="arrow_upward" Click="GoUp" Disabled="@string.IsNullOrEmpty(parentPath)" />
+    </div>
+    <div class="text-muted" style="align-self:center;">@currentPath</div>
+    <div>
+        <RadzenButton Text="Use This Folder" Icon="check" ButtonStyle="ButtonStyle.Primary" Click="UseCurrent" />
+        <RadzenButton Text="Cancel" Icon="close" ButtonStyle="ButtonStyle.Light" Click="() => Dialogs.Close(null)" />
+    </div>
+  </div>
+
+@if (!string.IsNullOrEmpty(error))
+{
+    <div class="alert alert-warning" role="alert">@error</div>
+}
+
+<RadzenDataList TItem="string" Data="subdirs" Style="height: 300px; overflow:auto; border: 1px solid #ddd; padding: .25rem;">
+    <Template Context="dir">
+        <div class="d-flex justify-content-between align-items-center" style="padding:.25rem .5rem;">
+            <span>@System.IO.Path.GetFileName(dir)</span>
+            <RadzenButton Text="Open" Size="ButtonSize.Small" Icon="folder_open" Click="(() => Enter(dir))" />
+        </div>
+    </Template>
+</RadzenDataList>
+
+@code {
+    [Parameter] public string? InitialPath { get; set; }
+
+    private string currentPath = string.Empty;
+    private string? parentPath;
+    private List<string> subdirs = new();
+    private string? error;
+
+    protected override void OnInitialized()
+    {
+        currentPath = NormalizeStart(InitialPath);
+        LoadSubdirs();
+    }
+
+    private string NormalizeStart(string? path)
+    {
+        if (!string.IsNullOrWhiteSpace(path))
+        {
+            try
+            {
+                var full = Path.GetFullPath(path);
+                if (Directory.Exists(full)) return full;
+            }
+            catch { }
+        }
+
+        var contentRoot = AppContext.BaseDirectory;
+        try
+        {
+            var baseDir = Directory.GetCurrentDirectory();
+            if (Directory.Exists(baseDir)) return baseDir;
+        }
+        catch { }
+
+        return RuntimeInformation.IsOSPlatform(OSPlatform.Windows) ? "C:\\" : "/";
+    }
+
+    private void LoadSubdirs()
+    {
+        error = null;
+        try
+        {
+            var dirInfo = new DirectoryInfo(currentPath);
+            parentPath = dirInfo.Parent?.FullName;
+            subdirs = dirInfo.Exists
+                ? dirInfo.EnumerateDirectories().OrderBy(d => d.Name).Select(d => d.FullName).ToList()
+                : new List<string>();
+        }
+        catch (Exception ex)
+        {
+            error = ex.Message;
+            subdirs.Clear();
+        }
+        StateHasChanged();
+    }
+
+    private void Enter(string dir)
+    {
+        currentPath = dir;
+        LoadSubdirs();
+    }
+
+    private void GoUp()
+    {
+        if (!string.IsNullOrEmpty(parentPath))
+        {
+            currentPath = parentPath!;
+            LoadSubdirs();
+        }
+    }
+
+    private void GoToPath()
+    {
+        try
+        {
+            var full = Path.GetFullPath(currentPath);
+            if (!Directory.Exists(full))
+            {
+                error = "Directory does not exist.";
+            }
+            else
+            {
+                currentPath = full;
+                LoadSubdirs();
+                return;
+            }
+        }
+        catch (Exception ex)
+        {
+            error = ex.Message;
+        }
+
+        StateHasChanged();
+    }
+
+    private void UseCurrent()
+    {
+        if (string.IsNullOrWhiteSpace(currentPath) || !Directory.Exists(currentPath))
+        {
+            Notifications.Notify(new NotificationMessage { Severity = NotificationSeverity.Warning, Summary = "Invalid folder", Detail = "Select an existing folder." });
+            return;
+        }
+        Dialogs.Close(currentPath);
+    }
+}
+

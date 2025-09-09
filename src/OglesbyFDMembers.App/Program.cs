@@ -27,9 +27,13 @@ builder.Services.AddScoped<OglesbyFDMembers.App.Services.RolloverService>();
 builder.Services.AddScoped<OglesbyFDMembers.App.Services.IPdfVvecExtractor, OglesbyFDMembers.App.Services.PdfVvecExtractor>();
 builder.Services.AddScoped<OglesbyFDMembers.App.Services.IVvecImportService, OglesbyFDMembers.App.Services.VvecImportService>();
 builder.Services.AddScoped<OglesbyFDMembers.App.Services.VvecNoticeService>();
+builder.Services.AddScoped<OglesbyFDMembers.App.Services.BackupSettingsStore>();
+builder.Services.AddScoped<OglesbyFDMembers.App.Services.BackupService>();
 
 // Background jobs
 builder.Services.AddHostedService<OglesbyFDMembers.App.Background.DailyAssessmentJob>();
+builder.Services.AddHostedService<OglesbyFDMembers.App.Background.DailyBackupJob>();
+builder.Services.AddHostedService<OglesbyFDMembers.App.Background.WeeklyBackupJob>();
 
 var app = builder.Build();
 

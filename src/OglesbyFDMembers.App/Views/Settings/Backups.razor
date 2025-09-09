@@ -1,0 +1,218 @@
+@page "/settings/backups"
+@using OglesbyFDMembers.App.Services
+@inject BackupService BackupSvc
+@inject NotificationService Notifications
+@inject DialogService Dialogs
+
+<h2>Backups</h2>
+
+<div class="alert alert-warning" role="alert" style="margin-bottom: 1rem;">
+    Restoring a backup replaces the current database. A restart of the application is recommended after restore to ensure all connections reload.
+  </div>
+
+@if (string.IsNullOrWhiteSpace(folder))
+{
+    <div class="alert alert-info" role="alert" style="margin-bottom: 1rem;">
+        Backups are currently disabled. Set a backup folder below to enable manual, daily, and weekly backups.
+    </div>
+}
+
+<RadzenFieldset Text="Backup Settings" Style="margin-bottom:1rem;">
+    <div class="row g-2 align-items-end">
+        <div class="col-9">
+            <RadzenTextBox @bind-Value="folder" Style="width:100%" Placeholder="Backup folder path" />
+        </div>
+    <div class="col-3 d-flex gap-2">
+        <RadzenButton Click="OpenFolderPicker" Text="Browse…" Icon="folder_open" ButtonStyle="ButtonStyle.Light" Style="flex:1" />
+        <RadzenButton Click="SaveFolder" Text="Save" Icon="save" ButtonStyle="ButtonStyle.Primary" Style="flex:1" />
+    </div>
+    </div>
+</RadzenFieldset>
+
+<div class="d-flex gap-2" style="margin-bottom:0.5rem;">
+    <RadzenButton Click="CreateBackup" Text="Create Backup Now" Icon="backup" ButtonStyle="ButtonStyle.Primary" Disabled="@string.IsNullOrWhiteSpace(folder)" />
+    <RadzenButton Click="RefreshFiles" Text="Refresh" Icon="refresh" />
+    <span class="text-muted" style="align-self:center;">Current folder: @(string.IsNullOrWhiteSpace(folder) ? "(not set)" : folder)</span>
+  </div>
+
+<RadzenDataGrid Data="@files" TItem="System.IO.FileInfo" AllowPaging PageSize="10" RowHeight="34">
+    <Columns>
+        <RadzenDataGridColumn TItem="System.IO.FileInfo" Title="Type" Width="120px">
+            <Template Context="f">
+                <span class="@GetBadgeClass(f)">@GetKind(f)</span>
+            </Template>
+        </RadzenDataGridColumn>
+        <RadzenDataGridColumn TItem="System.IO.FileInfo" Title="File">
+            <Template Context="f">@f.Name</Template>
+        </RadzenDataGridColumn>
+        <RadzenDataGridColumn TItem="System.IO.FileInfo" Title="Created">
+            <Template Context="f">@f.CreationTimeUtc.ToLocalTime().ToString("g")</Template>
+        </RadzenDataGridColumn>
+        <RadzenDataGridColumn TItem="System.IO.FileInfo" Title="Size">
+            <Template Context="f">@FormatSize(f.Length)</Template>
+        </RadzenDataGridColumn>
+        <RadzenDataGridColumn TItem="System.IO.FileInfo" Title="Actions" Width="220px">
+            <Template Context="f">
+                <RadzenButton Click="@(() => Restore(f))" Text="Restore" Icon="restore" ButtonStyle="ButtonStyle.Danger" Size="ButtonSize.Small" />
+            </Template>
+        </RadzenDataGridColumn>
+    </Columns>
+</RadzenDataGrid>
+
+@code {
+    private string folder = string.Empty;
+    private List<System.IO.FileInfo> files = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        folder = await BackupSvc.GetBackupFolderAsync();
+        files = await BackupSvc.ListBackupsAsync();
+    }
+
+    private async Task SaveFolder()
+    {
+        try
+        {
+            await BackupSvc.SetBackupFolderAsync(folder);
+            folder = await BackupSvc.GetBackupFolderAsync();
+            await RefreshFiles();
+            Notifications.Notify(new NotificationMessage
+            {
+                Severity = NotificationSeverity.Success,
+                Summary = "Saved",
+                Detail = $"Backup folder set to {folder}"
+            });
+        }
+        catch (Exception ex)
+        {
+            Notifications.Notify(new NotificationMessage
+            {
+                Severity = NotificationSeverity.Error,
+                Summary = "Save Failed",
+                Detail = ex.Message
+            });
+        }
+    }
+
+    private async Task CreateBackup()
+    {
+        var result = await BackupSvc.CreateBackupAsync();
+        if (result.Success)
+        {
+            await RefreshFiles();
+            Notifications.Notify(new NotificationMessage
+            {
+                Severity = NotificationSeverity.Success,
+                Summary = "Backup Created",
+                Detail = result.FilePath
+            });
+        }
+        else
+        {
+            Notifications.Notify(new NotificationMessage
+            {
+                Severity = NotificationSeverity.Error,
+                Summary = "Backup Failed",
+                Detail = result.Message
+            });
+        }
+    }
+
+    private async Task RefreshFiles()
+    {
+        files = await BackupSvc.ListBackupsAsync();
+        StateHasChanged();
+    }
+
+    private async Task OpenFolderPicker()
+    {
+        var picked = await Dialogs.OpenAsync<FolderPickerDialog>(
+            "Choose Backup Folder",
+            new Dictionary<string, object?>
+            {
+                [nameof(FolderPickerDialog.InitialPath)] = string.IsNullOrWhiteSpace(folder) ? null : folder
+            },
+            new DialogOptions { Width = "700px", Resizable = true, Draggable = true });
+
+        if (picked is string selected && !string.IsNullOrWhiteSpace(selected))
+        {
+            folder = selected;
+            await SaveFolder();
+        }
+    }
+
+    private async Task Restore(System.IO.FileInfo f)
+    {
+        var confirm = await Dialogs.Confirm(
+            $"Restore from '{f.Name}'? Current DB will be replaced.",
+            "Confirm Restore",
+            new ConfirmOptions { OkButtonText = "Restore", CancelButtonText = "Cancel" });
+        if (confirm != true) return;
+
+        var result = await BackupSvc.RestoreBackupAsync(f.FullName);
+        if (result.Success)
+        {
+            Notifications.Notify(new NotificationMessage
+            {
+                Severity = NotificationSeverity.Success,
+                Summary = "Restore Complete",
+                Detail = result.Message
+            });
+        }
+        else
+        {
+            Notifications.Notify(new NotificationMessage
+            {
+                Severity = NotificationSeverity.Error,
+                Summary = "Restore Failed",
+                Detail = result.Message
+            });
+        }
+    }
+
+    private static string FormatSize(long bytes)
+    {
+        string[] sizes = { "B", "KB", "MB", "GB" };
+        double len = bytes;
+        int order = 0;
+        while (len >= 1024 && order < sizes.Length - 1)
+        {
+            order++;
+            len = len / 1024;
+        }
+        return $"{len:0.##} {sizes[order]}";
+    }
+
+    private static string GetKind(System.IO.FileInfo f)
+    {
+        var name = Path.GetFileNameWithoutExtension(f.Name);
+        if (name.StartsWith("oglesbyfd-", StringComparison.OrdinalIgnoreCase))
+        {
+            var parts = name.Split('-');
+            if (parts.Length >= 4)
+            {
+                var tag = parts[1].ToLowerInvariant();
+                return tag switch
+                {
+                    "daily" => "Daily",
+                    "weekly" => "Weekly",
+                    "manual" => "Manual",
+                    "backup" => "Manual", // legacy naming
+                    _ => "Manual"
+                };
+            }
+        }
+        return "Manual";
+    }
+
+    private static string GetBadgeClass(System.IO.FileInfo f)
+    {
+        var kind = GetKind(f);
+        return kind switch
+        {
+            "Daily" => "badge bg-info",
+            "Weekly" => "badge bg-success",
+            _ => "badge bg-secondary"
+        };
+    }
+}
