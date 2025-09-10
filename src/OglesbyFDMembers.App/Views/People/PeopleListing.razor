@@ -5,39 +5,29 @@
 @inject NotificationService Notifications
 
 <h1>Members</h1>
-<p>
+<p class="rz-mb-8">
     Listing of people who are active and inactive members of Oglesby Fire Department.
 </p>
 
-<RadzenRow Wrap="FlexWrap.Wrap" Gap="1rem" Style="margin-bottom: 1rem; align-items:flex-end; margin-top: 2rem">
-    <RadzenColumn Size="12" SizeSM="8" SizeMD="6" SizeLG="4">
-        <RadzenFormField Text="Year" Variant="Variant.Outlined" Style="width:100%">
-            <ChildContent>
-                <RadzenDropDown Data="years" @bind-Value="year" TValue="int" Style="width:100%"
-                                 Placeholder="Select year" Change="@(async _ => await LoadAsync())"/>
-            </ChildContent>
-        </RadzenFormField>
-    </RadzenColumn>
-    <RadzenColumn Size="12" SizeSM="8" SizeMD="6" SizeLG="4">
-        <div style="display:flex; gap:.5rem; align-items:center;">
+<RadzenDataGrid @ref="grid" Data="people" TItem="PersonListItem"
+                AllowColumnResize AllowSorting AllowPaging ShowPagingSummary AllowColumnPicking
+                ColumnWidth="300px" AllowFiltering PageSize="25">
+    <HeaderTemplate>
+        <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" Gap="1rem;" Wrap="FlexWrap.Wrap">
             <RadzenSplitButton Text="Export" Icon="download" ButtonStyle="ButtonStyle.Primary" Size="ButtonSize.Medium"
-                                Click="@(args => OnExportAction(args?.Value?.ToString()))">
+                               Click="@(args => OnExportAction(args?.Value?.ToString()))">
                 <ChildContent>
                     <RadzenSplitButtonItem Text="Export Mailing List (Excel)" Value="mailing-xlsx" Icon="download" />
                     <RadzenSplitButtonItem Text="Export Member List (Excel)" Value="member-xlsx" Icon="download" />
                 </ChildContent>
             </RadzenSplitButton>
-        </div>
-    </RadzenColumn>
-</RadzenRow>
-
-<RadzenDataGrid @ref="grid" Data="people" TItem="PersonListItem" AllowColumnResize AllowSorting AllowPaging ShowPagingSummary
-                ColumnWidth="300px" AllowFiltering PageSize="25">
+        </RadzenStack>
+    </HeaderTemplate>
     <Columns>
-        <RadzenDataGridColumn TItem="PersonListItem" Property="FullName" FilterProperty="FirstName" Title="Name" Width="220px" />
-        <RadzenDataGridColumn TItem="PersonListItem" Property="Address" Title="Address" Width="370px" />
-        <RadzenDataGridColumn TItem="PersonListItem" Property="Phone" Title="Phone" Width="140px" />
-        <RadzenDataGridColumn TItem="PersonListItem" Property="Email" Title="Email" Width="220px" />
+        <RadzenDataGridColumn TItem="PersonListItem" Property="FullName" FilterProperty="FirstName" Title="Name" Width="220px"/>
+        <RadzenDataGridColumn TItem="PersonListItem" Property="Address" Title="Address" Width="370px"/>
+        <RadzenDataGridColumn TItem="PersonListItem" Property="Phone" Title="Phone" Width="140px"/>
+        <RadzenDataGridColumn TItem="PersonListItem" Property="Email" Title="Email" Width="220px"/>
         <RadzenDataGridColumn TItem="PersonListItem" Title="Payment Status" Width="250px" Filterable="false">
             <Template Context="item">
                 @PaymentStatusTemplate(item)
@@ -47,11 +37,11 @@
             <Template Context="item">
                 <div @onclick:stopPropagation="true" style="display:flex; justify-content:flex-end;">
                     <RadzenSplitButton ButtonStyle="ButtonStyle.Light" Size="ButtonSize.ExtraSmall" Text="View" Value=""
-                                        Click="@(args => OnClickViewDetails(item.PersonId, args?.Value?.ToString()))">
+                                       Click="@(args => OnClickViewDetails(item.PersonId, args?.Value?.ToString()))">
                         <ChildContent>
-                            <RadzenSplitButtonItem Text="Add Payment" Value="add-payment" Icon="payments" />
-                            <RadzenSplitButtonItem Text="Add Address" Value="add-address" Icon="home" />
-                            <RadzenSplitButtonItem Text="Add Property" Value="add-property" Icon="add_home" />
+                            <RadzenSplitButtonItem Text="Add Payment" Value="add-payment" Icon="payments"/>
+                            <RadzenSplitButtonItem Text="Add Address" Value="add-address" Icon="home"/>
+                            <RadzenSplitButtonItem Text="Add Property" Value="add-property" Icon="add_home"/>
                         </ChildContent>
                     </RadzenSplitButton>
                 </div>

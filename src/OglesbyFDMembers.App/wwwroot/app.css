@@ -58,3 +58,11 @@ h1:focus {
 .form-floating > .form-control-plaintext:focus::placeholder, .form-floating > .form-control:focus::placeholder {
     text-align: start;
 }
+
+/* Floating action button (fixed to viewport) */
+.fab-fixed {
+    position: fixed !important;
+    right: 24px;
+    bottom: 24px;
+    z-index: 1200;
+}

@@ -5,150 +5,170 @@
 @inject IntakeService IntakeSvc
 @inject Radzen.NotificationService Notifications
 @inject IServiceProvider Services
+@inject NavigationManager Nav
 
-<h1>New Member Intake</h1>
+<RadzenRow JustifyContent="JustifyContent.Center">
+    <RadzenColumn Size="12" SizeMD="8">
+        <h1>New Member Intake</h1>
+        <p class="rz-mb-8">
+            All of the important information for a member can be entered below. You will be able to add more properties, mailing addresses, or additional payments later on.
+        </p>
+        
+        <RadzenTemplateForm TItem="IntakeVm" Data="model" Submit="HandleSubmit">
+            <DataAnnotationsValidator/>
+            <ValidationSummary/>
 
-<EditForm Model="model" FormName="intake" OnValidSubmit="HandleSubmit">
-    <DataAnnotationsValidator />
-    <ValidationSummary />
+            <RadzenFieldset Text="Contact" Style="margin-bottom:1rem;">
+                <RadzenRow Gap="1rem" Wrap="FlexWrap.Wrap">
+                    <RadzenColumn Size="12" SizeMD="6">
+                        <RadzenFormField Text="First Name" Style="width:100%">
+                            <RadzenTextBox @bind-Value="model.FirstName" Name="FirstName" />
+                            <RadzenRequiredValidator Component="FirstName" Text="First name is required"/>
+                        </RadzenFormField>
+                    </RadzenColumn>
+                    <RadzenColumn Size="12" SizeMD="6">
+                        <RadzenFormField Text="Last Name" Style="width:100%">
+                            <RadzenTextBox @bind-Value="model.LastName" Name="LastName" />
+                            <RadzenRequiredValidator Component="LastName" Text="Last name is required"/>
+                        </RadzenFormField>
+                    </RadzenColumn>
+                    <RadzenColumn Size="12" SizeMD="6">
+                        <RadzenFormField Text="Phone (optional)" Style="width:100%">
+                            <RadzenMask Mask="(***) ***-****" CharacterPattern="[0-9]" Placeholder="(000) 000-0000" Name="Phone" @bind-Value="model.Phone" aria-label="Phone"/>
+                        </RadzenFormField>
+                    </RadzenColumn>
+                    <RadzenColumn Size="12" SizeMD="6">
+                        <RadzenFormField Text="Email (optional)" Style="width:100%">
+                            <RadzenTextBox @bind-Value="model.Email" Name="Email" />
+                            <RadzenEmailValidator Component="Email" Text="Invalid email format"/>
+                        </RadzenFormField>
+                    </RadzenColumn>
+                </RadzenRow>
+            </RadzenFieldset>
 
-    <div class="row g-3">
-        <div class="col-12">
-            <h4>Contact</h4>
-        </div>
-        <div class="col-md-4">
-            <label class="form-label">First Name</label>
-            <InputText class="form-control" @bind-Value="model.FirstName" />
-            <ValidationMessage For="() => model.FirstName" />
-        </div>
-        <div class="col-md-4">
-            <label class="form-label">Last Name</label>
-            <InputText class="form-control" @bind-Value="model.LastName" />
-            <ValidationMessage For="() => model.LastName" />
-        </div>
-        <div class="col-md-4">
-            <label class="form-label">Phone (optional)</label>
-            <InputText class="form-control" @bind-Value="model.Phone" />
-        </div>
-        <div class="col-md-6">
-            <label class="form-label">Email (optional)</label>
-            <InputText class="form-control" @bind-Value="model.Email" />
-            <ValidationMessage For="() => model.Email" />
-        </div>
+            <RadzenFieldset Text="Mailing Address" Style="margin-bottom:1rem;">
+                <RadzenRow Gap="1rem" Wrap="FlexWrap.Wrap">
+                    <RadzenColumn Size="12">
+                        <RadzenFormField Text="Addressee Name (optional)" Style="width:100%">
+                            <RadzenTextBox @bind-Value="model.AddresseeName" Name="AddresseeName" />
+                        </RadzenFormField>
+                    </RadzenColumn>
+                    <RadzenColumn Size="12">
+                        <RadzenFormField Text="Address Line 1" Style="width:100%">
+                            <RadzenTextBox @bind-Value="model.AddressLine1" Name="AddressLine1" />
+                            <RadzenRequiredValidator Component="AddressLine1" Text="Address Line 1 is required"/>
+                        </RadzenFormField>
+                    </RadzenColumn>
+                    <RadzenColumn Size="12">
+                        <RadzenFormField Text="Address Line 2" Style="width:100%">
+                            <RadzenTextBox @bind-Value="model.AddressLine2" Name="AddressLine2" />
+                        </RadzenFormField>
+                    </RadzenColumn>
+                    <RadzenColumn Size="12" SizeMD="6">
+                        <RadzenFormField Text="City" Style="width:100%">
+                            <RadzenTextBox @bind-Value="model.City" Name="City" />
+                        </RadzenFormField>
+                    </RadzenColumn>
+                    <RadzenColumn Size="12" SizeMD="2">
+                        <RadzenFormField Text="State" Style="width:100%">
+                            <RadzenTextBox @bind-Value="model.State" Name="State" />
+                        </RadzenFormField>
+                    </RadzenColumn>
+                    <RadzenColumn Size="12" SizeMD="4">
+                        <RadzenFormField Text="Postal Code" Style="width:100%">
+                            <RadzenTextBox @bind-Value="model.PostalCode" Name="PostalCode" />
+                        </RadzenFormField>
+                    </RadzenColumn>
+                </RadzenRow>
+            </RadzenFieldset>
 
-        <div class="col-12 mt-3">
-            <h4>Mailing Address</h4>
-        </div>
-        <div class="col-md-6">
-            <label class="form-label">Addressee Name (optional)</label>
-            <InputText class="form-control" @bind-Value="model.AddresseeName" />
-        </div>
-        <div class="col-md-6">
-            <label class="form-label">Address Line 1</label>
-            <InputText class="form-control" @bind-Value="model.AddressLine1" />
-            <ValidationMessage For="() => model.AddressLine1" />
-        </div>
-        <div class="col-md-6">
-            <label class="form-label">Address Line 2</label>
-            <InputText class="form-control" @bind-Value="model.AddressLine2" />
-        </div>
-        <div class="col-md-4">
-            <label class="form-label">City</label>
-            <InputText class="form-control" @bind-Value="model.City" />
-        </div>
-        <div class="col-md-4">
-            <label class="form-label">State</label>
-            <InputText class="form-control" @bind-Value="model.State" />
-        </div>
-        <div class="col-md-4">
-            <label class="form-label">Postal Code</label>
-            <InputText class="form-control" @bind-Value="model.PostalCode" />
-        </div>
+            <RadzenFieldset Text="Property" Style="margin-bottom:1rem;">
+                <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" Gap="0.5rem">
+                    <RadzenSwitch @bind-Value="model.PropertySameAsAddress" InputAttributes="@(new Dictionary<string,object>(){ { "aria-label", "Add separate property entry" }})" />
+                    <RadzenLabel Text="Property address is same as mailing" Component="True" />
+                </RadzenStack>
+                @if (!model.PropertySameAsAddress)
+                {
+                    <RadzenRow Gap="1rem" Wrap="FlexWrap.Wrap" Style="margin-top: 1rem;">
+                        <RadzenColumn Size="12">
+                            <RadzenFormField Text="Address Line 1" Style="width:100%">
+                                <RadzenTextBox @bind-Value="model.PropertyAddressLine1" Name="PropertyAddressLine1" />
+                            </RadzenFormField>
+                        </RadzenColumn>
+                        <RadzenColumn Size="12">
+                            <RadzenFormField Text="Address Line 2" Style="width:100%">
+                                <RadzenTextBox @bind-Value="model.PropertyAddressLine2" Name="PropertyAddressLine2" />
+                            </RadzenFormField>
+                        </RadzenColumn>
+                        <RadzenColumn Size="12" SizeMD="6">
+                            <RadzenFormField Text="City" Style="width:100%">
+                                <RadzenTextBox @bind-Value="model.PropertyCity" Name="PropertyCity" />
+                            </RadzenFormField>
+                        </RadzenColumn>
+                        <RadzenColumn Size="12" SizeMD="2">
+                            <RadzenFormField Text="State" Style="width:100%">
+                                <RadzenTextBox @bind-Value="model.PropertyState" Name="PropertyState" />
+                            </RadzenFormField>
+                        </RadzenColumn>
+                        <RadzenColumn Size="12" SizeMD="4">
+                            <RadzenFormField Text="Postal Code" Style="width:100%">
+                                <RadzenTextBox @bind-Value="model.PropertyPostalCode" Name="PropertyPostalCode" />
+                            </RadzenFormField>
+                        </RadzenColumn>
+                    </RadzenRow>
+                }
+            </RadzenFieldset>
 
-        <div class="col-12 mt-3">
-            <h4>Property</h4>
-        </div>
-        <div class="col-md-8 d-flex align-items-end">
-            <div class="form-check">
-                <InputCheckbox class="form-check-input" @bind-Value="model.PropertySameAsAddress" />
-                <label class="form-check-label">Property address is same as mailing</label>
-            </div>
-        </div>
-        @if (!model.PropertySameAsAddress)
-        {
-            <div class="col-md-6">
-                <label class="form-label">Property Address Line 1</label>
-                <InputText class="form-control" @bind-Value="model.PropertyAddressLine1" />
-                <ValidationMessage For="() => model.PropertyAddressLine1" />
-            </div>
-            <div class="col-md-6">
-                <label class="form-label">Property Address Line 2</label>
-                <InputText class="form-control" @bind-Value="model.PropertyAddressLine2" />
-            </div>
-            <div class="col-md-4">
-                <label class="form-label">Property City</label>
-                <InputText class="form-control" @bind-Value="model.PropertyCity" />
-            </div>
-            <div class="col-md-4">
-                <label class="form-label">Property State</label>
-                <InputText class="form-control" @bind-Value="model.PropertyState" />
-            </div>
-            <div class="col-md-4">
-                <label class="form-label">Property Postal Code</label>
-                <InputText class="form-control" @bind-Value="model.PropertyPostalCode" />
-            </div>
-        }
+            <RadzenFieldset Text="Payment" Style="margin-bottom:3rem;">
+                <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" Gap="0.5rem">
+                    <RadzenSwitch @bind-Value="model.HasPaid" InputAttributes="@(new Dictionary<string,object>(){ { "aria-label", "Add a payment" }})" />
+                    <RadzenLabel Text="Add a payment" Component="True" />
+                </RadzenStack>
+                @if (model.HasPaid)
+                {
+                    <RadzenRow Gap="1rem" Wrap="FlexWrap.Wrap" Style="margin-top: 1rem;">
+                        <RadzenColumn Size="12">
+                            <RadzenSelectBar @bind-Value="@model.PaymentType">
+                                <Items>
+                                    <RadzenSelectBarItem Value="@PaymentType.Cash" Text="Cash" />
+                                    <RadzenSelectBarItem Value="@PaymentType.Check" Text="Check" />
+                                    <RadzenSelectBarItem Value="@PaymentType.VVEC" Text="VVEC" />
+                                </Items>
+                            </RadzenSelectBar>
+                        </RadzenColumn>
+                        <RadzenColumn Size="12" SizeMD="4">
+                            <RadzenFormField Text="Amount" Style="width:100%">
+                                <RadzenNumeric @bind-Value="model.PaymentAmount" Name="PaymentAmount"/>
+                            </RadzenFormField>
+                        </RadzenColumn>
+                        <RadzenColumn Size="12" SizeMD="4">
+                            <RadzenFormField Text="Paid Date (optional)" Style="width:100%">
+                                <RadzenDatePicker @bind-Value=@model.PaidDate Name="PaidDate" ShowCalendarWeek />
+                            </RadzenFormField>
+                        </RadzenColumn>
+                        @if (model.PaymentType == PaymentType.Check)
+                        {
+                            <RadzenColumn Size="12" SizeMD="4">
+                                <RadzenFormField Text="Check # (optional)">
+                                    <RadzenTextBox @bind-Value="model.CheckNumber" Name="CheckNumber" Style="width:100%"/>
+                                </RadzenFormField>
+                            </RadzenColumn>
+                        }
+                    </RadzenRow>
+                }
+            </RadzenFieldset>
 
-        <div class="col-12 mt-3">
-            <h4>Payment</h4>
-        </div>
-        <div class="col-md-3">
-            <div class="form-check">
-                <InputCheckbox class="form-check-input"
-                               Value="model.HasPaid"
-                               ValueChanged="OnHasPaidChanged"
-                               ValueExpression="() => model.HasPaid" />
-                <label class="form-check-label">Add a payment</label>
+            <div class="d-flex justify-content-end" style="margin-top: 1rem;">
+                <RadzenButton Text="Save" Icon="save" ButtonStyle="ButtonStyle.Primary" Type="ButtonType.Submit"/>
             </div>
-        </div>
-        @if (model.HasPaid)
-        {
-            <div class="col-md-3">
-                <label class="form-label">Amount</label>
-                <InputNumber class="form-control" @bind-Value="model.PaymentAmount" />
-            </div>
-            <div class="col-md-3">
-                <label class="form-label">Payment Type</label>
-                <InputSelect class="form-select" @bind-Value="model.PaymentType">
-                    <option value="@PaymentType.Cash">Cash</option>
-                    <option value="@PaymentType.Check">Check</option>
-                    <option value="@PaymentType.VVEC">VVEC</option>
-                </InputSelect>
-            </div>
-            <div class="col-md-3">
-                <label class="form-label">Paid Date (optional)</label>
-                <InputDate class="form-control" @bind-Value="model.PaidDate" />
-            </div>
-            @if (model.PaymentType == PaymentType.Check)
-            {
-                <div class="col-md-3">
-                    <label class="form-label">Check # (optional)</label>
-                    <InputText class="form-control" @bind-Value="model.CheckNumber" />
-                </div>
-            }
-        }
-
-        <div class="col-12 mt-3">
-            <button type="submit" class="btn btn-primary">Save</button>
-            <button type="button" class="btn btn-secondary ms-2" @onclick="Reset">Reset</button>
-        </div>
-    </div>
-</EditForm>
+        </RadzenTemplateForm>
+    </RadzenColumn>
+</RadzenRow>
 
 @code {
     private IntakeVm model = new();
 
-    private async Task HandleSubmit()
+    private async Task HandleSubmit(IntakeVm _)
     {
         // Validate conditional fields
         if (!model.PropertySameAsAddress && string.IsNullOrWhiteSpace(model.PropertyAddressLine1))
@@ -196,14 +216,7 @@
         try
         {
             var id = await IntakeSvc.CreateAsync(req);
-            Notifications.Notify(new Radzen.NotificationMessage
-            {
-                Severity = Radzen.NotificationSeverity.Success,
-                Summary = "Saved",
-                Detail = $"Person #{id} created successfully.",
-                Duration = 3000
-            });
-            Reset();
+            Nav.NavigateTo($"/members/{id}");
         }
         catch (Exception ex)
         {
@@ -243,6 +256,11 @@
                 });
             }
         }
+    }
+
+    private Task OnHasPaidAfterChange()
+    {
+        return OnHasPaidChanged(model.HasPaid);
     }
 
     private string? ComposePropertySitusAddress()
