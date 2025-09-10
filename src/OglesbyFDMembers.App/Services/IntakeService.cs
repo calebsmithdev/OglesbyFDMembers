@@ -113,6 +113,7 @@ public class IntakeService
             var payment = new Payment
             {
                 PersonId = person.Id,
+                TargetPropertyId = property.Id,
                 PaymentType = request.PaymentType ?? PaymentType.Cash,
                 Amount = request.PaymentAmount ?? fee,
                 PaidUtc = request.PaidDateUtc ?? DateTime.UtcNow,

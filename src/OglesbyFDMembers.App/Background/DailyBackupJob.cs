@@ -46,14 +46,25 @@ public class DailyBackupJob : BackgroundService
                 return;
             }
 
-            var result = await svc.CreateBackupAsync(BackupKind.Daily, ct);
-            if (result.Success)
+            // Skip if already ran today (UTC date)
+            var utcNow = DateTime.UtcNow;
+            var lastDaily = await settings.GetLastDailyUtcAsync();
+            if (lastDaily?.Date == utcNow.Date)
             {
-                _logger.LogInformation("Daily backup created: {Path}", result.FilePath);
+                _logger.LogDebug("Daily backup skipped: already ran today ({Date}).", lastDaily?.ToString("u"));
             }
             else
             {
-                _logger.LogWarning("Daily backup failed: {Message}", result.Message);
+                var result = await svc.CreateBackupAsync(BackupKind.Daily, ct);
+                if (result.Success)
+                {
+                    await settings.SetLastDailyUtcAsync(utcNow);
+                    _logger.LogInformation("Daily backup created: {Path}", result.FilePath);
+                }
+                else
+                {
+                    _logger.LogWarning("Daily backup failed: {Message}", result.Message);
+                }
             }
 
             await svc.ApplyRetentionAsync(dailyDays: 14, weeklyWeeks: 16, ct);

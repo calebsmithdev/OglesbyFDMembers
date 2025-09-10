@@ -46,14 +46,24 @@ public class WeeklyBackupJob : BackgroundService
                 return;
             }
 
-            var result = await svc.CreateBackupAsync(BackupKind.Weekly, ct);
-            if (result.Success)
+            var utcNow = DateTime.UtcNow;
+            var lastWeekly = await settings.GetLastWeeklyUtcAsync();
+            if (IsSameIsoWeek(lastWeekly, utcNow))
             {
-                _logger.LogInformation("Weekly backup created: {Path}", result.FilePath);
+                _logger.LogDebug("Weekly backup skipped: already ran this week (last: {Date}).", lastWeekly?.ToString("u"));
             }
             else
             {
-                _logger.LogWarning("Weekly backup failed: {Message}", result.Message);
+                var result = await svc.CreateBackupAsync(BackupKind.Weekly, ct);
+                if (result.Success)
+                {
+                    await settings.SetLastWeeklyUtcAsync(utcNow);
+                    _logger.LogInformation("Weekly backup created: {Path}", result.FilePath);
+                }
+                else
+                {
+                    _logger.LogWarning("Weekly backup failed: {Message}", result.Message);
+                }
             }
 
             await svc.ApplyRetentionAsync(dailyDays: 14, weeklyWeeks: 16, ct);
@@ -65,5 +75,17 @@ public class WeeklyBackupJob : BackgroundService
         {
             _logger.LogError(ex, "WeeklyBackupJob failed");
         }
+    }
+
+    private static bool IsSameIsoWeek(DateTime? aUtc, DateTime bUtc)
+    {
+        if (aUtc == null) return false;
+        static DateTime StartOfIsoWeekUtc(DateTime dt)
+        {
+            var d = dt.Date;
+            int diff = (7 + (int)d.DayOfWeek - (int)DayOfWeek.Monday) % 7;
+            return d.AddDays(-diff);
+        }
+        return StartOfIsoWeekUtc(aUtc.Value) == StartOfIsoWeekUtc(bUtc);
     }
 }
