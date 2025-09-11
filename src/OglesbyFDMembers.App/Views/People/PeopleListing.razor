@@ -34,6 +34,8 @@
         <RadzenDataGridColumn TItem="PersonListItem" Property="PostalCode" Title="Zip" Visible="false" Width="140px"/>
         <RadzenDataGridColumn TItem="PersonListItem" Property="Phone" Title="Phone" Width="140px"/>
         <RadzenDataGridColumn TItem="PersonListItem" Property="Email" Title="Email" Width="220px"/>
+        <RadzenDataGridColumn TItem="PersonListItem" Property="PropertyCount" Title="# Properties" Width="120px" Visible="false"/>
+        <RadzenDataGridColumn TItem="PersonListItem" Property="AddressCount" Title="# Addresses" Width="120px" Visible="false"/>
         <RadzenDataGridColumn TItem="PersonListItem" Title="Payment Status" Width="250px" Filterable="false">
             <Template Context="item">
                 @PaymentStatusTemplate(item)

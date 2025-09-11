@@ -626,6 +626,23 @@ public class PeopleService
             .ThenBy(x => x.FirstName)
             .ToListAsync(ct);
 
+        // Precompute counts for properties (current ownerships) and mailing addresses
+        var ids = data.Select(x => x.PersonId).Distinct().ToList();
+        var today2 = DateTime.UtcNow.Date;
+        var propertyCounts = await _db.Ownerships.AsNoTracking()
+            .Where(o => ids.Contains(o.PersonId))
+            .Where(o => o.StartDate <= today2 && (o.EndDate == null || o.EndDate >= today2))
+            .GroupBy(o => o.PersonId)
+            .Select(g => new { PersonId = g.Key, Count = g.Select(o => o.PropertyId).Distinct().Count() })
+            .ToDictionaryAsync(x => x.PersonId, x => x.Count, ct);
+
+        var addressCounts = await _db.PersonAddresses.AsNoTracking()
+            .Where(a => ids.Contains(a.PersonId))
+            .Where(a => a.IsValidForMail)
+            .GroupBy(a => a.PersonId)
+            .Select(g => new { PersonId = g.Key, Count = g.Count() })
+            .ToDictionaryAsync(x => x.PersonId, x => x.Count, ct);
+
         var list = data.Select(x => new PersonListItem
         {
             PersonId = x.PersonId,
@@ -641,7 +658,9 @@ public class PeopleService
             State = x.State,
             PostalCode = x.PostalCode,
             AmountPaid = x.AmountPaid,
-            AmountDue = x.AmountDue
+            AmountDue = x.AmountDue,
+            PropertyCount = propertyCounts.ContainsKey(x.PersonId) ? propertyCounts[x.PersonId] : 0,
+            AddressCount = addressCounts.ContainsKey(x.PersonId) ? addressCounts[x.PersonId] : 0
         }).ToList();
 
         // Compute status and balances client-side for clarity
@@ -847,6 +866,8 @@ public class PersonListItem
     public decimal AmountDue { get; set; }
     public decimal Balance { get; set; }
     public PaymentStatus Status { get; set; }
+    public int PropertyCount { get; set; }
+    public int AddressCount { get; set; }
 }
 
 public class PersonDetails
