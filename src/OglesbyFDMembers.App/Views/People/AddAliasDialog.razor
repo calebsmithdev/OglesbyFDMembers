@@ -1,30 +1,38 @@
 @using System.ComponentModel.DataAnnotations
 @using OglesbyFDMembers.Domain.Entities
-@inject Radzen.DialogService Dialogs
-@inject Radzen.NotificationService Notifications
-@inject OglesbyFDMembers.App.Services.PeopleService People
+@inject DialogService Dialogs
+@inject NotificationService Notifications
+@inject Services.PeopleService People
 
-<div style="padding: 1rem;">
-    <h4 style="margin-top:0;">Add Alias</h4>
-
+<div class="rz-py-5">
     <RadzenTemplateForm TItem="AddAliasModel" Data="model" Submit="HandleSubmit">
-        <div class="row g-2">
-            <div class="col-12">
-                <RadzenTextBox @bind-Value="model.Alias" Name="Alias" Placeholder="Alias (e.g., First Last)" Style="width:100%" />
-                <RadzenRequiredValidator Component="Alias" Text="Alias is required" />
-            </div>
-            <div class="col-12">
-                <RadzenDropDown @bind-Value="model.Type" Name="AliasType" Data="typeOptions" Style="width:100%"
-                                TValue="PersonAliasType" Placeholder="Select type"
-                                TextProperty="Text" ValueProperty="Value" />
-                <RadzenRequiredValidator Component="AliasType" Text="Type is required" />
-            </div>
-        </div>
+        <RadzenStack Orientation="Orientation.Vertical" JustifyContent="JustifyContent.SpaceBetween">
+            <RadzenStack Gap="1rem">
+                <RadzenFormField Text="Alias" Style="width:100%" AllowFloatingLabel="false">
+                    <ChildContent>
+                        <RadzenTextBox @bind-Value="model.Alias" Name="Alias" Placeholder="Alias (e.g., First Last, Business name)"/>
+                    </ChildContent>
+                    <Helper>
+                        <RadzenRequiredValidator Component="Alias" Text="Alias is required"/>
+                    </Helper>
+                </RadzenFormField>
+                <RadzenFormField Text="Type" Style="width:100%" AllowFloatingLabel="false">
+                    <ChildContent>
+                        <RadzenDropDown @bind-Value="model.Type" Name="AliasType" Data="typeOptions"
+                                        TValue="PersonAliasType" Placeholder="Select type"
+                                        TextProperty="Text" ValueProperty="Value"/>
+                    </ChildContent>
+                    <Helper>
+                        <RadzenRequiredValidator Component="AliasType" Text="Type is required"/>
+                    </Helper>
+                </RadzenFormField>
+            </RadzenStack>
 
-        <div class="d-flex justify-content-end" style="margin-top: 1rem; gap: .5rem;">
-            <RadzenButton Text="Cancel" ButtonStyle="ButtonStyle.Light" Click="@(() => Dialogs.Close(false))" />
-            <RadzenButton Text="Save" Icon="save" ButtonStyle="ButtonStyle.Primary" Type="ButtonType.Submit" />
-        </div>
+            <RadzenStack Orientation="Orientation.Horizontal" JustifyContent="JustifyContent.End" Gap="10px" class="rz-mt-4">
+                <RadzenButton Text="Cancel" ButtonStyle="ButtonStyle.Light" Click="@(() => Dialogs.CloseSide(false))"/>
+                <RadzenButton Text="Save" Icon="save" ButtonStyle="ButtonStyle.Primary" Type="ButtonType.Submit"/>
+            </RadzenStack>
+        </RadzenStack>
     </RadzenTemplateForm>
 </div>
 
@@ -52,7 +60,7 @@
                 Detail = "Alias has been added to the person.",
                 Duration = 3000
             });
-            Dialogs.Close(true);
+            await Dialogs.CloseSideAsync(true);
         }
         catch (Exception ex)
         {

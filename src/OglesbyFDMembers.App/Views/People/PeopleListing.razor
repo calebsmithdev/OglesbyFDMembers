@@ -1,5 +1,6 @@
 @page "/members"
 @using OglesbyFDMembers.App.Services
+@inject DialogService Dialogs
 @inject PeopleService PeopleSvc
 @inject NavigationManager Nav
 @inject NotificationService Notifications
@@ -24,8 +25,13 @@
         </RadzenStack>
     </HeaderTemplate>
     <Columns>
-        <RadzenDataGridColumn TItem="PersonListItem" Property="FullName" FilterProperty="FirstName" Title="Name" Width="220px"/>
-        <RadzenDataGridColumn TItem="PersonListItem" Property="Address" Title="Address" Width="370px"/>
+        <RadzenDataGridColumn TItem="PersonListItem" Property="FirstName" Title="First Name" Width="180px"/>
+        <RadzenDataGridColumn TItem="PersonListItem" Property="LastName" Title="Last Name" Width="180px"/>
+        <RadzenDataGridColumn TItem="PersonListItem" Property="Line1" Title="Address Line 1" Width="280px"/>
+        <RadzenDataGridColumn TItem="PersonListItem" Property="Line2" Visible="false" Title="Address Line 2" Width="220px"/>
+        <RadzenDataGridColumn TItem="PersonListItem" Property="City" Title="City" Visible="false" Width="160px"/>
+        <RadzenDataGridColumn TItem="PersonListItem" Property="State" Title="State" Visible="false" Width="120px"/>
+        <RadzenDataGridColumn TItem="PersonListItem" Property="PostalCode" Title="Zip" Visible="false" Width="140px"/>
         <RadzenDataGridColumn TItem="PersonListItem" Property="Phone" Title="Phone" Width="140px"/>
         <RadzenDataGridColumn TItem="PersonListItem" Property="Email" Title="Email" Width="220px"/>
         <RadzenDataGridColumn TItem="PersonListItem" Title="Payment Status" Width="250px" Filterable="false">
@@ -33,12 +39,13 @@
                 @PaymentStatusTemplate(item)
             </Template>
         </RadzenDataGridColumn>
-        <RadzenDataGridColumn TItem="PersonListItem" Title="" Width="100px" Frozen="true" FrozenPosition="FrozenColumnPosition.Right" Filterable="false" Sortable="false" Resizable="false">
+        <RadzenDataGridColumn TItem="PersonListItem" Title="" Width="100px" Frozen="true" ColumnPickerTitle="Actions" FrozenPosition="FrozenColumnPosition.Right" Filterable="false" Sortable="false" Resizable="false">
             <Template Context="item">
                 <div @onclick:stopPropagation="true" style="display:flex; justify-content:flex-end;">
                     <RadzenSplitButton ButtonStyle="ButtonStyle.Light" Size="ButtonSize.ExtraSmall" Text="View" Value=""
                                        Click="@(args => OnClickViewDetails(item.PersonId, args?.Value?.ToString()))">
                         <ChildContent>
+                            <RadzenSplitButtonItem Text="Add Alias" Value="add-alias" Icon="detection_and_zone"/>
                             <RadzenSplitButtonItem Text="Add Payment" Value="add-payment" Icon="payments"/>
                             <RadzenSplitButtonItem Text="Add Address" Value="add-address" Icon="home"/>
                             <RadzenSplitButtonItem Text="Add Property" Value="add-property" Icon="add_home"/>
@@ -121,19 +128,6 @@
     private RenderFragment PaymentStatusTemplate(PersonListItem item) => builder =>
     {
         var seq = 0;
-        // Paid amount
-        builder.OpenElement(seq++, "span");
-        builder.AddContent(seq++, $"{item.AmountPaid:C} ");
-        builder.CloseElement();
-
-        // Parentheses show AmountDue as a negative e.g. (-$20.00), in red.
-        var style = "color:#b00020;font-weight:600"; // material red tone
-        builder.OpenElement(seq++, "span");
-        builder.AddAttribute(seq++, "style", style);
-        builder.AddContent(seq++, $"(-{item.AmountDue:C})");
-        builder.CloseElement();
-
-        // Optional status label
         var label = item.Status switch
         {
             PaymentStatus.Paid => " Paid",
@@ -141,23 +135,49 @@
             PaymentStatus.Unpaid => " Unpaid",
             _ => null
         };
-        if (!string.IsNullOrWhiteSpace(label))
+        
+        // Paid amount
+        builder.OpenElement(seq++, "span");
+        builder.AddContent(seq++, $"{label} ");
+        builder.CloseElement();
+
+        // Parentheses show AmountDue as a negative e.g. (-$20.00), in red.
+        if (item.AmountDue > 0)
         {
+            var style = "color:#b00020;font-weight:600"; // material red tone
             builder.OpenElement(seq++, "span");
-            builder.AddAttribute(seq++, "style", "margin-left:6px;color:#666;font-size:0.85rem");
-            builder.AddContent(seq++, label);
+            builder.AddAttribute(seq++, "style", style);
+            builder.AddContent(seq++, $"(-{item.AmountDue:C})");
             builder.CloseElement();
         }
     };
 
-    private void OnClickViewDetails(int personId, string? action)
+    private async Task OnClickViewDetails(int personId, string? action)
     {
-        if (string.IsNullOrWhiteSpace(action))
+        switch (action)
         {
-            Nav.NavigateTo($"/members/{personId}");
-            return;
+            case "add-alias":
+                var result = await Dialogs.OpenSideAsync<AddAliasDialog>(
+                    "Add Alias",
+                    new Dictionary<string, object?>
+                    {
+                        ["PersonId"] = personId
+                    },
+                    new SideDialogOptions
+                    {
+                        CloseDialogOnOverlayClick = false,
+                        ShowMask = true,
+                        Position = DialogPosition.Right
+                    });
+
+                if (result is bool ok && ok)
+                {
+                    await LoadAsync();
+                }
+                break;
+            default:
+                Nav.NavigateTo($"/members/{personId}");
+                break;
         }
-        
-        Nav.NavigateTo($"/members/{personId}?action={Uri.EscapeDataString(action)}");
     }
 }

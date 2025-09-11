@@ -2,10 +2,10 @@
 @using OglesbyFDMembers.App.Services
 @using Microsoft.AspNetCore.WebUtilities
 @inject PeopleService PeopleSvc
-@inject Radzen.NotificationService Notifications
+@inject NotificationService Notifications
 @inject NavigationManager Nav
-@inject Radzen.DialogService Dialogs
-@inject OglesbyFDMembers.App.Services.PaymentsService PaymentSvc
+@inject DialogService Dialogs
+@inject PaymentsService PaymentSvc
 
 <h1>Person Details</h1>
 
@@ -36,7 +36,7 @@ else
                 }
                 <RadzenButton Text="Edit Person" Icon="edit" ButtonStyle="ButtonStyle.Light" Style="margin-right: 0.5rem;" Click="@OpenEditPersonDialog" />
                 <RadzenButton Text="Add Alias" Icon="person_add" ButtonStyle="ButtonStyle.Light" Style="margin-right: 0.5rem;" Click="@OpenAddAliasDialog" />
-                <RadzenButton Text="Back to People" Icon="arrow_back" ButtonStyle="ButtonStyle.Light" Click='@(() => Nav.NavigateTo("/people"))' />
+                <RadzenButton Text="Back to People" Icon="arrow_back" ButtonStyle="ButtonStyle.Light" Click='@(() => Nav.NavigateTo("/members"))' />
             </div>
         </div>
         <div class="mt-2">
@@ -475,19 +475,17 @@ else
 
     private async Task OpenAddAliasDialog()
     {
-        var result = await Dialogs.OpenAsync<OglesbyFDMembers.App.Views.People.AddAliasDialog>(
+        var result = await Dialogs.OpenSideAsync<AddAliasDialog>(
             "Add Alias",
             new Dictionary<string, object?>
             {
                 ["PersonId"] = id
             },
-            new DialogOptions
+            new SideDialogOptions
             {
-                CloseDialogOnOverlayClick = true,
-                ShowClose = true,
-                Resizable = false,
-                Draggable = false,
-                Style = "width: 520px; max-width: 95vw;"
+                CloseDialogOnOverlayClick = false,
+                ShowMask = true,
+                Position = DialogPosition.Right
             });
 
         if (result is bool ok && ok)

@@ -629,10 +629,17 @@ public class PeopleService
         var list = data.Select(x => new PersonListItem
         {
             PersonId = x.PersonId,
+            FirstName = x.FirstName,
+            LastName = x.LastName,
             FullName = (x.FirstName + " " + x.LastName).Trim(),
             Email = x.Email,
             Phone = x.Phone,
             Address = FormatAddress(x.Line1, x.Line2, x.City, x.State, x.PostalCode),
+            Line1 = x.Line1,
+            Line2 = x.Line2,
+            City = x.City,
+            State = x.State,
+            PostalCode = x.PostalCode,
             AmountPaid = x.AmountPaid,
             AmountDue = x.AmountDue
         }).ToList();
@@ -825,8 +832,15 @@ public enum PaymentStatus
 public class PersonListItem
 {
     public int PersonId { get; set; }
+    public string FirstName { get; set; } = string.Empty;
+    public string LastName { get; set; } = string.Empty;
     public string FullName { get; set; } = string.Empty;
     public string? Address { get; set; }
+    public string? Line1 { get; set; }
+    public string? Line2 { get; set; }
+    public string? City { get; set; }
+    public string? State { get; set; }
+    public string? PostalCode { get; set; }
     public string? Phone { get; set; }
     public string? Email { get; set; }
     public decimal AmountPaid { get; set; }
