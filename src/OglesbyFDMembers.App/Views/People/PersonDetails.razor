@@ -5,6 +5,7 @@
 @inject NotificationService Notifications
 @inject NavigationManager Nav
 @inject DialogService Dialogs
+@inject OglesbyFDMembers.App.Services.PeopleSidebarService SidebarSvc
 @inject PaymentsService PaymentSvc
 
 <h1>Person Details</h1>
@@ -70,7 +71,7 @@ else
     </RadzenCard>
 
     <RadzenRow Wrap="FlexWrap.Wrap" Gap="1rem">
-        <RadzenColumn Size="12" SizeSM="12" SizeMD="6">
+        <RadzenColumn Size="12" SizeSM="12" SizeMD="12">
             <RadzenCard>
                 <div class="d-flex justify-content-between align-items-center" style="margin-top:0;">
                     <h5 style="margin:0;">Owned Properties</h5>
@@ -78,7 +79,7 @@ else
                 </div>
                 @if (details.Properties?.Count > 0)
                 {
-                    <RadzenDataGrid Data="details.Properties" TItem="OglesbyFDMembers.App.Services.OwnedProperty" AllowPaging PageSize="10" RowHeight="34">
+                    <RadzenDataGrid Data="details.Properties" TItem="OglesbyFDMembers.App.Services.OwnedProperty" AllowPaging PageSize="10" RowHeight="34" Style="width: 100%;">
                         <Columns>
                             <RadzenDataGridColumn TItem="OglesbyFDMembers.App.Services.OwnedProperty" Title="Address">
                                 <Template Context="p">
@@ -119,7 +120,7 @@ else
                 }
             </RadzenCard>
         </RadzenColumn>
-        <RadzenColumn Size="12" SizeSM="12" SizeMD="6">
+        <RadzenColumn Size="12" SizeSM="12" SizeMD="12">
             <RadzenCard>
                 <div class="d-flex justify-content-between align-items-center" style="margin-top:0;">
                     <h5 style="margin:0;">Mailing Addresses</h5>
@@ -127,7 +128,7 @@ else
                 </div>
                 @if (details.Addresses?.Count > 0)
                 {
-                    <RadzenDataGrid Data="details.Addresses" TItem="OglesbyFDMembers.App.Services.MailingAddress" AllowPaging PageSize="10" RowHeight="34">
+                    <RadzenDataGrid Data="details.Addresses" TItem="OglesbyFDMembers.App.Services.MailingAddress" AllowPaging PageSize="10" RowHeight="34" Style="width: 100%;">
                         <Columns>
                             <RadzenDataGridColumn TItem="OglesbyFDMembers.App.Services.MailingAddress" Title="Address">
                                 <Template Context="a">
@@ -203,7 +204,7 @@ else
                 }
                 else
                 {
-                    <RadzenDataGrid Data="payments" TItem="OglesbyFDMembers.App.Services.PaymentListItem" AllowPaging PageSize="10" RowHeight="34">
+                    <RadzenDataGrid Data="payments" TItem="OglesbyFDMembers.App.Services.PaymentListItem" AllowPaging PageSize="10" RowHeight="34" Style="width: 100%;">
                         <Columns>
                             <RadzenDataGridColumn TItem="OglesbyFDMembers.App.Services.PaymentListItem" Title="Date" Width="160px">
                                 <Template Context="p">@p.PaidUtc.ToLocalTime().ToString("yyyy-MM-dd HH:mm")</Template>
@@ -383,107 +384,32 @@ else
 
     private async Task OpenAddAddressSidebar()
     {
-        var result = await Dialogs.OpenSideAsync<AddMailingAddressSidebar>(
-            "Add Mailing Address",
-            new Dictionary<string, object?>
-            {
-                ["PersonId"] = id
-            },
-            new SideDialogOptions
-            {
-                CloseDialogOnOverlayClick = false,
-                ShowMask = true,
-                Position = DialogPosition.Right
-            });
-
-        if (result is bool ok && ok)
-        {
-            await RefreshAsync();
-        }
+        var ok = await SidebarSvc.OpenAddAddressSidebar(id);
+        if (ok) await RefreshAsync();
     }
 
     private async Task OpenEditPersonDialog()
     {
-        var result = await Dialogs.OpenSideAsync<OglesbyFDMembers.App.Views.People.EditPersonDialog>(
-            "Edit Person",
-            new Dictionary<string, object?>
-            {
-                ["PersonId"] = id
-            },
-            new SideDialogOptions
-            {
-                CloseDialogOnOverlayClick = false,
-                ShowMask = true,
-                Position = DialogPosition.Right
-            });
-
-        if (result is bool ok && ok)
-        {
-            await RefreshAsync();
-        }
+        var ok = await SidebarSvc.OpenEditPersonDialog(id);
+        if (ok) await RefreshAsync();
     }
 
     private async Task OpenAddPaymentDialog()
     {
-        var result = await Dialogs.OpenSideAsync<OglesbyFDMembers.App.Views.Payments.AddPaymentDialog>(
-            "Add Payment",
-            new Dictionary<string, object?>
-            {
-                ["PersonId"] = id
-            },
-            new SideDialogOptions
-            {
-                CloseDialogOnOverlayClick = false,
-                ShowMask = true,
-                Position = DialogPosition.Right
-            });
-
-        if (result is bool ok && ok)
-        {
-            await RefreshAsync();
-        }
+        var ok = await SidebarSvc.OpenAddPaymentDialog(id);
+        if (ok) await RefreshAsync();
     }
 
     private async Task OpenAddPropertyDialog()
     {
-        var result = await Dialogs.OpenSideAsync<OglesbyFDMembers.App.Views.People.AddPropertyDialog>(
-            "Add Property",
-            new Dictionary<string, object?>
-            {
-                ["PersonId"] = id
-            },
-            new SideDialogOptions
-            {
-                CloseDialogOnOverlayClick = false,
-                ShowMask = true,
-                Position = DialogPosition.Right
-            });
-
-        if (result is bool ok && ok)
-        {
-            await RefreshAsync();
-        }
+        var ok = await SidebarSvc.OpenAddPropertyDialog(id);
+        if (ok) await RefreshAsync();
     }
 
     private async Task OpenAddAliasDialog()
     {
-        var result = await Dialogs.OpenSideAsync<AddAliasDialog>(
-            "Add Alias",
-            new Dictionary<string, object?>
-            {
-                ["PersonId"] = id
-            },
-            new SideDialogOptions
-            {
-                CloseDialogOnOverlayClick = false,
-                ShowMask = true,
-                Position = DialogPosition.Right
-            });
-
-        if (result is bool ok && ok)
-        {
-            await RefreshAsync();
-        }
+        var ok = await SidebarSvc.OpenAddAliasDialog(id);
+        if (ok) await RefreshAsync();
     }
 
     private static string DisplayAliasType(OglesbyFDMembers.Domain.Entities.PersonAliasType t)

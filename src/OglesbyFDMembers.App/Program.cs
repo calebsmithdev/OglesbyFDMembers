@@ -29,6 +29,7 @@ builder.Services.AddScoped<OglesbyFDMembers.App.Services.IVvecImportService, Ogl
 builder.Services.AddScoped<OglesbyFDMembers.App.Services.VvecNoticeService>();
 builder.Services.AddScoped<OglesbyFDMembers.App.Services.BackupSettingsStore>();
 builder.Services.AddScoped<OglesbyFDMembers.App.Services.BackupService>();
+builder.Services.AddScoped<OglesbyFDMembers.App.Services.PeopleSidebarService>();
 
 // Background jobs
 builder.Services.AddHostedService<OglesbyFDMembers.App.Background.DailyAssessmentJob>();

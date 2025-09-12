@@ -1,6 +1,7 @@
 @page "/members"
 @using OglesbyFDMembers.App.Services
 @inject DialogService Dialogs
+@inject OglesbyFDMembers.App.Services.PeopleSidebarService SidebarSvc
 @inject PeopleService PeopleSvc
 @inject NavigationManager Nav
 @inject NotificationService Notifications
@@ -178,85 +179,25 @@
     
     private async Task OpenAddPaymentDialog(int personId)
     {
-        var result = await Dialogs.OpenSideAsync<Payments.AddPaymentDialog>(
-            "Add Payment",
-            new Dictionary<string, object?>
-            {
-                ["PersonId"] = personId
-            },
-            new SideDialogOptions
-            {
-                CloseDialogOnOverlayClick = false,
-                ShowMask = true,
-                Position = DialogPosition.Right
-            });
-
-        if (result is bool ok && ok)
-        {
-            await LoadAsync();
-        }
+        var ok = await SidebarSvc.OpenAddPaymentDialog(personId);
+        if (ok) await LoadAsync();
     }
 
     private async Task OpenAddPropertyDialog(int personId)
     {
-        var result = await Dialogs.OpenSideAsync<AddPropertyDialog>(
-            "Add Property",
-            new Dictionary<string, object?>
-            {
-                ["PersonId"] = personId
-            },
-            new SideDialogOptions
-            {
-                CloseDialogOnOverlayClick = false,
-                ShowMask = true,
-                Position = DialogPosition.Right
-            });
-
-        if (result is bool ok && ok)
-        {
-            await LoadAsync();
-        }
+        var ok = await SidebarSvc.OpenAddPropertyDialog(personId);
+        if (ok) await LoadAsync();
     }
 
     private async Task OpenAddAliasDialog(int personId)
     {
-        var result = await Dialogs.OpenSideAsync<AddAliasDialog>(
-            "Add Alias",
-            new Dictionary<string, object?>
-            {
-                ["PersonId"] = personId
-            },
-            new SideDialogOptions
-            {
-                CloseDialogOnOverlayClick = false,
-                ShowMask = true,
-                Position = DialogPosition.Right
-            });
-
-        if (result is bool ok && ok)
-        {
-            await LoadAsync();
-        }
+        var ok = await SidebarSvc.OpenAddAliasDialog(personId);
+        if (ok) await LoadAsync();
     }
     
     private async Task OpenAddAddressSidebar(int personId)
     {
-        var result = await Dialogs.OpenSideAsync<AddMailingAddressSidebar>(
-            "Add Mailing Address",
-            new Dictionary<string, object?>
-            {
-                ["PersonId"] = personId
-            },
-            new SideDialogOptions
-            {
-                CloseDialogOnOverlayClick = false,
-                ShowMask = true,
-                Position = DialogPosition.Right
-            });
-
-        if (result is bool ok && ok)
-        {
-            await LoadAsync();
-        }
+        var ok = await SidebarSvc.OpenAddAddressSidebar(personId);
+        if (ok) await LoadAsync();
     }
 }
