@@ -1,6 +1,5 @@
 using Radzen;
-using System.Collections.Generic;
-using System.Threading.Tasks;
+using OglesbyFDMembers.App.Views.People.Sidebars;
 
 namespace OglesbyFDMembers.App.Services
 {
@@ -15,7 +14,7 @@ namespace OglesbyFDMembers.App.Services
 
         public async Task<bool> OpenEditPersonDialog(int personId)
         {
-            var result = await _dialogs.OpenSideAsync<OglesbyFDMembers.App.Views.People.Sidebars.EditPersonDialog>(
+            var result = await _dialogs.OpenSideAsync<EditPersonDialog>(
                 "Edit Person",
                 new Dictionary<string, object?> { ["PersonId"] = personId },
                 DefaultOptions());
@@ -24,7 +23,7 @@ namespace OglesbyFDMembers.App.Services
 
         public async Task<bool> OpenAddAliasDialog(int personId)
         {
-            var result = await _dialogs.OpenSideAsync<OglesbyFDMembers.App.Views.People.Sidebars.AddAliasDialog>(
+            var result = await _dialogs.OpenSideAsync<AddAliasDialog>(
                 "Add Alias",
                 new Dictionary<string, object?> { ["PersonId"] = personId },
                 DefaultOptions());
@@ -33,7 +32,7 @@ namespace OglesbyFDMembers.App.Services
 
         public async Task<bool> OpenAddPropertyDialog(int personId)
         {
-            var result = await _dialogs.OpenSideAsync<OglesbyFDMembers.App.Views.People.Sidebars.AddPropertyDialog>(
+            var result = await _dialogs.OpenSideAsync<AddPropertyDialog>(
                 "Add Property",
                 new Dictionary<string, object?> { ["PersonId"] = personId },
                 DefaultOptions());
@@ -42,7 +41,7 @@ namespace OglesbyFDMembers.App.Services
 
         public async Task<bool> OpenAddAddressSidebar(int personId)
         {
-            var result = await _dialogs.OpenSideAsync<OglesbyFDMembers.App.Views.People.Sidebars.AddMailingAddressSidebar>(
+            var result = await _dialogs.OpenSideAsync<AddMailingAddressSidebar>(
                 "Add Mailing Address",
                 new Dictionary<string, object?> { ["PersonId"] = personId },
                 DefaultOptions());
@@ -51,7 +50,7 @@ namespace OglesbyFDMembers.App.Services
 
         public async Task<bool> OpenAddPaymentDialog(int personId)
         {
-            var result = await _dialogs.OpenSideAsync<OglesbyFDMembers.App.Views.Payments.AddPaymentDialog>(
+            var result = await _dialogs.OpenSideAsync<AddPaymentDialog>(
                 "Add Payment",
                 new Dictionary<string, object?> { ["PersonId"] = personId },
                 DefaultOptions());

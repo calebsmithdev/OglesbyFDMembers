@@ -1,7 +1,6 @@
 @page "/members"
 @using OglesbyFDMembers.App.Services
-@inject DialogService Dialogs
-@inject OglesbyFDMembers.App.Services.PeopleSidebarService SidebarSvc
+@inject PeopleSidebarService SidebarSvc
 @inject PeopleService PeopleSvc
 @inject NavigationManager Nav
 @inject NotificationService Notifications
@@ -11,7 +10,7 @@
     Listing of people who are active and inactive members of Oglesby Fire Department.
 </p>
 
-<RadzenDataGrid @ref="grid" Data="people" TItem="PersonListItem"
+<RadzenDataGrid Data="people" TItem="PersonListItem"
                 AllowColumnResize AllowSorting AllowPaging ShowPagingSummary AllowColumnPicking
                 ColumnWidth="300px" AllowFiltering PageSize="25">
     <HeaderTemplate>
@@ -61,7 +60,6 @@
 </RadzenDataGrid>
 
 @code {
-    private RadzenDataGrid<PersonListItem>? grid;
     private List<PersonListItem> people = new();
     private List<int> years = new();
     private int year;
@@ -90,12 +88,6 @@
             loading = false;
         }
         await InvokeAsync(StateHasChanged);
-    }
-
-    private async Task ClearSearch()
-    {
-        search = null;
-        await LoadAsync();
     }
 
     private async Task OnExportAction(string? val)

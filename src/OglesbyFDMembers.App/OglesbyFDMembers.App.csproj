@@ -29,4 +29,8 @@
       <ProjectReference Include="..\OglesbyFDMembers.Data\OglesbyFDMembers.Data.csproj" />
     </ItemGroup>
 
+    <ItemGroup>
+      <Folder Include="Views\Payments\" />
+    </ItemGroup>
+
 </Project>
