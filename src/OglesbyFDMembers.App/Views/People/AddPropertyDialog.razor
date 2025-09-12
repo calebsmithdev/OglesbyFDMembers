@@ -5,35 +5,54 @@
 @inject OglesbyFDMembers.App.Services.PeopleService People
 @inject OglesbyFDMembers.App.Services.RolloverService Rollover
 
-<div style="padding: 1rem;">
+<div class="rz-py-5">
     <RadzenTemplateForm TItem="AddPropertyModel" Data="model" Submit="HandleSubmit">
-        <div class="row g-2">
-            <div class="col-12">
-                <RadzenTextBox @bind-Value="model.AddressLine1" Name="AddressLine1" Placeholder="Address Line 1" Style="width:100%" />
-                <RadzenRequiredValidator Component="AddressLine1" Text="Address Line 1 is required" />
-            </div>
-            <div class="col-12">
-                <RadzenTextBox @bind-Value="model.AddressLine2" Name="AddressLine2" Placeholder="Address Line 2 (optional)" Style="width:100%" />
-            </div>
-            <div class="col-6">
-                <RadzenTextBox @bind-Value="model.City" Name="City" Placeholder="City" Style="width:100%" />
-            </div>
-            <div class="col-3">
-                <RadzenTextBox @bind-Value="model.State" Name="State" Placeholder="State" Style="width:100%" />
-            </div>
-            <div class="col-3">
-                <RadzenTextBox @bind-Value="model.Zip" Name="Zip" Placeholder="Zip" Style="width:100%" />
-            </div>
-            <div class="col-12" style="margin-top:.5rem;">
-                <RadzenCheckBox @bind-Value="model.Active" TriState="false" />
-                <label style="margin-left:.5rem;">Active property</label>
-            </div>
-        </div>
+        <RadzenStack Orientation="Orientation.Vertical" JustifyContent="JustifyContent.SpaceBetween">
+            <RadzenStack Gap="1rem">
+                <RadzenFormField Text="Address Line 1" Style="width:100%" AllowFloatingLabel="false">
+                    <ChildContent>
+                        <RadzenTextBox @bind-Value="model.AddressLine1" Name="AddressLine1" Placeholder="Address Line 1" />
+                    </ChildContent>
+                    <Helper>
+                        <RadzenRequiredValidator Component="AddressLine1" Text="Address Line 1 is required" />
+                    </Helper>
+                </RadzenFormField>
 
-        <div class="d-flex justify-content-end" style="margin-top: 1rem; gap: .5rem;">
-            <RadzenButton Text="Cancel" ButtonStyle="ButtonStyle.Light" Click="@(() => Dialogs.Close(false))" />
-            <RadzenButton Text="Save" Icon="save" ButtonStyle="ButtonStyle.Primary" Type="ButtonType.Submit" />
-        </div>
+                <RadzenFormField Text="Address Line 2" Style="width:100%" AllowFloatingLabel="false">
+                    <ChildContent>
+                        <RadzenTextBox @bind-Value="model.AddressLine2" Name="AddressLine2" Placeholder="Address Line 2 (optional)" />
+                    </ChildContent>
+                </RadzenFormField>
+
+                <RadzenFormField Text="City" Style="width:100%" AllowFloatingLabel="false">
+                    <ChildContent>
+                        <RadzenTextBox @bind-Value="model.City" Name="City" Placeholder="City" />
+                    </ChildContent>
+                </RadzenFormField>
+
+                <RadzenFormField Text="State" Style="width:100%" AllowFloatingLabel="false">
+                    <ChildContent>
+                        <RadzenTextBox @bind-Value="model.State" Name="State" Placeholder="State" />
+                    </ChildContent>
+                </RadzenFormField>
+
+                <RadzenFormField Text="Zip" Style="width:100%" AllowFloatingLabel="false">
+                    <ChildContent>
+                        <RadzenTextBox @bind-Value="model.Zip" Name="Zip" Placeholder="Zip" />
+                    </ChildContent>
+                </RadzenFormField>
+
+                <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" Gap="0.5rem" class="rz-pt-3">
+                    <RadzenSwitch @bind-Value="model.Active" Name="Active" />
+                    <RadzenLabel Text="Active" Component="True" />
+                </RadzenStack>
+            </RadzenStack>
+
+            <RadzenStack Orientation="Orientation.Horizontal" JustifyContent="JustifyContent.End" Gap="10px" class="rz-mt-4">
+                <RadzenButton Text="Cancel" ButtonStyle="ButtonStyle.Light" Click="@(() => Dialogs.CloseSide(false))" />
+                <RadzenButton Text="Save" Icon="save" ButtonStyle="ButtonStyle.Primary" Type="ButtonType.Submit" />
+            </RadzenStack>
+        </RadzenStack>
     </RadzenTemplateForm>
 </div>
 
@@ -70,7 +89,7 @@
                 Duration = 3000
             });
 
-            Dialogs.Close(true);
+            await Dialogs.CloseSideAsync(true);
         }
         catch (Exception ex)
         {

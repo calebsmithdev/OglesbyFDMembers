@@ -7,90 +7,88 @@
 @inject OglesbyFDMembers.App.Services.PeopleService People
 @implements IDisposable
 
-<div style="padding: 1rem;">
-    <h4 style="margin-top:0;">Add Payment</h4>
-
+<div class="rz-py-5">
     <RadzenTemplateForm TItem="AddPaymentModel" Data="model" Submit="HandleValidSubmit">
-        <div class="row g-2">
-            <div class="col-6">
-                <label class="form-label" style="display:block;">Year</label>
-                <InputSelect class="form-select" @bind-Value="selectedYear" @bind-Value:after="OnYearAfterChange">
-                    @foreach (var y in years)
-                    {
-                        <option value="@y">@y</option>
-                    }
-                </InputSelect>
-            </div>
-            <div class="col-6">
-                <RadzenNumeric @bind-Value="model.Amount" Name="Amount" Style="width:100%" Placeholder="Amount" />
-                <RadzenRequiredValidator Component="Amount" Text="Amount is required" />
-            </div>
-            <div class="col-6">
-                <label class="form-label" style="display:block;">Payment Type</label>
-                <InputSelect class="form-select" @bind-Value="model.PaymentType">
-                    <option value="@PaymentType.Cash">Cash</option>
-                    <option value="@PaymentType.Check">Check</option>
-                    <option value="@PaymentType.VVEC">VVEC</option>
-                </InputSelect>
-            </div>
-            <div class="col-6">
-                <label class="form-label" style="display:block;">Paid Date (optional)</label>
-                <InputDate class="form-control" @bind-Value="model.PaidDate" />
-            </div>
-            @if (model.PaymentType == PaymentType.Check)
-            {
-                <div class="col-6">
-                    <RadzenTextBox @bind-Value="model.CheckNumber" Name="CheckNumber" Placeholder="Check # (optional)" Style="width:100%" />
-                </div>
-            }
-            <div class="col-12">
-                <RadzenCheckBox @bind-Value="model.IsDonation" TriState="false" />
-                <label style="margin-left: .5rem;">Donation</label>
-            </div>
-            @if (!model.IsDonation)
-            {
-                <div class="col-12" style="margin-top:.5rem;">
-                    <label class="form-label" style="display:block;">Allocation</label>
-                    <InputRadioGroup @bind-Value="model.Mode">
-                        <div class="form-check">
-                            <InputRadio Value="AllocationMode.SplitAcrossAll" class="form-check-input" />
-                            <label class="form-check-label">Split across all selected-year assessments</label>
-                        </div>
-                        @if (assessments.Count > 0)
-                        {
-                            <div class="form-check" style="margin-top:.25rem;">
-                                <InputRadio Value="AllocationMode.SingleAssessment" class="form-check-input" />
-                                <label class="form-check-label">Apply to a single assessment</label>
-                            </div>
-                        }
-                    </InputRadioGroup>
-                </div>
-                @if (model.Mode == AllocationMode.SingleAssessment)
+        <RadzenStack Orientation="Orientation.Vertical" JustifyContent="JustifyContent.SpaceBetween">
+            <RadzenStack Gap="1rem">
+                <RadzenFormField Text="Year" Style="width:100%" AllowFloatingLabel="false">
+                    <ChildContent>
+                        <RadzenDropDown Data="years" @bind-Value="selectedYear" TValue="int"
+                                        Change="@(async _ => await OnYearAfterChange())"
+                                        Placeholder="Select year" Style="width:100%" />
+                    </ChildContent>
+                </RadzenFormField>
+
+                <RadzenFormField Text="Amount" Style="width:100%" AllowFloatingLabel="false">
+                    <ChildContent>
+                        <RadzenNumeric @bind-Value="model.Amount" Name="Amount" Placeholder="Amount" />
+                    </ChildContent>
+                    <Helper>
+                        <RadzenRequiredValidator Component="Amount" Text="Amount is required" />
+                    </Helper>
+                </RadzenFormField>
+
+                <RadzenFormField Text="Payment Type" Style="width:100%" AllowFloatingLabel="false">
+                    <ChildContent>
+                        <RadzenDropDown Data="paymentTypeOptions" @bind-Value="model.PaymentType" TValue="PaymentType"
+                                        TextProperty="Text" ValueProperty="Value" Placeholder="Select type" Style="width:100%" />
+                    </ChildContent>
+                </RadzenFormField>
+
+                <RadzenFormField Text="Paid Date (optional)" Style="width:100%" AllowFloatingLabel="false">
+                    <ChildContent>
+                        <InputDate class="form-control" @bind-Value="model.PaidDate" />
+                    </ChildContent>
+                </RadzenFormField>
+
+                @if (model.PaymentType == PaymentType.Check)
                 {
-                    <div class="col-12">
-                        <label class="form-label" style="display:block;">Assessment</label>
-                        <InputSelect class="form-select" @bind-Value="model.TargetAssessmentId">
-                            <option value="">Select…</option>
-                            @foreach (var a in assessments)
-                            {
-                                <option value="@a.AssessmentId">@FormatAssessment(a)</option>
-                            }
-                        </InputSelect>
+                    <RadzenFormField Text="Check # (optional)" Style="width:100%" AllowFloatingLabel="false">
+                        <ChildContent>
+                            <RadzenTextBox @bind-Value="model.CheckNumber" Name="CheckNumber" Placeholder="Check # (optional)" />
+                        </ChildContent>
+                    </RadzenFormField>
+                }
+
+                <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" Gap="0.5rem" class="rz-pt-3">
+                    <RadzenSwitch @bind-Value="model.IsDonation" Name="IsDonation" />
+                    <RadzenLabel Text="Donation" Component="True" />
+                </RadzenStack>
+
+                @if (!model.IsDonation)
+                {
+                    <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" Gap="0.5rem" class="rz-pt-3">
+                        <RadzenSwitch @bind-Value="IsSingle" Name="AllocationIsSingle" Disabled="@(assessments.Count == 0)" />
+                        <RadzenLabel Text="Apply to single assessment" Component="True" />
+                    </RadzenStack>
+
+                    @if (model.Mode == AllocationMode.SingleAssessment)
+                    {
+                        <RadzenFormField Text="Assessment" Style="width:100%" AllowFloatingLabel="false">
+                            <ChildContent>
+                                <RadzenDropDown Data="assessmentDropOptions" @bind-Value="model.TargetAssessmentId" TValue="int?"
+                                                TextProperty="Text" ValueProperty="Value" AllowClear="true" Placeholder="Select…" Style="width:100%" />
+                            </ChildContent>
+                        </RadzenFormField>
+                    }
+
+                    <div class="text-muted" style="font-size:0.9rem;">
+                        @AllocationHelp
                     </div>
                 }
-                <div class="col-12 text-muted" style="font-size:0.9rem;">
-                    @AllocationHelp
-                </div>
-            }
-            <div class="col-12">
-                <RadzenTextArea @bind-Value="model.Notes" Name="Notes" Placeholder="Notes (optional)" Style="width:100%" Rows="3" />
-            </div>
-        </div>
 
-        <div class="d-flex justify-content-end" style="margin-top: 1rem; gap: .5rem;">
-            <RadzenButton Text="Cancel" ButtonStyle="ButtonStyle.Light" Click="@(() => Dialogs.Close(false))" />
-            <RadzenButton Text="Save" Icon="save" ButtonStyle="ButtonStyle.Primary" Type="ButtonType.Submit" />
-        </div>
+                <RadzenFormField Text="Notes" Style="width:100%" AllowFloatingLabel="false">
+                    <ChildContent>
+                        <RadzenTextArea @bind-Value="model.Notes" Name="Notes" Placeholder="Notes (optional)" Rows="3" />
+                    </ChildContent>
+                </RadzenFormField>
+            </RadzenStack>
+
+            <RadzenStack Orientation="Orientation.Horizontal" JustifyContent="JustifyContent.End" Gap="10px" class="rz-mt-4">
+                <RadzenButton Text="Cancel" ButtonStyle="ButtonStyle.Light" Click="@(() => Dialogs.CloseSide(false))" />
+                <RadzenButton Text="Save" Icon="save" ButtonStyle="ButtonStyle.Primary" Type="ButtonType.Submit" />
+            </RadzenStack>
+        </RadzenStack>
     </RadzenTemplateForm>
 </div>
 
@@ -104,8 +102,15 @@
     };
 
     private List<OglesbyFDMembers.App.Services.AssessmentOption> assessments = new();
+    private List<Option<int>> assessmentDropOptions = new();
     private List<int> years = new();
     private int selectedYear;
+    private readonly List<Option<PaymentType>> paymentTypeOptions = new()
+    {
+        new Option<PaymentType>("Cash", PaymentType.Cash),
+        new Option<PaymentType>("Check", PaymentType.Check),
+        new Option<PaymentType>("VVEC", PaymentType.VVEC)
+    };
 
     private CancellationTokenSource _cts = new();
     private bool _disposed;
@@ -120,6 +125,9 @@
             selectedYear = years.Contains(currentYear) ? currentYear : years.FirstOrDefault();
             if (selectedYear == 0) selectedYear = currentYear;
             assessments = await Payments.ListAssessmentOptionsAsync(PersonId, selectedYear, _cts.Token);
+            assessmentDropOptions = assessments
+                .Select(a => new Option<int>(FormatAssessment(a), a.AssessmentId))
+                .ToList();
         }
         catch (OperationCanceledException)
         {
@@ -159,7 +167,7 @@
                 Duration = 3000
             });
 
-            Dialogs.Close(true);
+            await Dialogs.CloseSideAsync(true);
         }
         catch (Exception ex)
         {
@@ -178,6 +186,9 @@
         try
         {
             assessments = await Payments.ListAssessmentOptionsAsync(PersonId, selectedYear, _cts.Token);
+            assessmentDropOptions = assessments
+                .Select(a => new Option<int>(FormatAssessment(a), a.AssessmentId))
+                .ToList();
         }
         catch (OperationCanceledException)
         {
@@ -212,6 +223,14 @@
         _cts.Dispose();
     }
 
+    private record Option<T>(string Text, T Value);
+
+    private bool IsSingle
+    {
+        get => model.Mode == AllocationMode.SingleAssessment;
+        set => model.Mode = value ? AllocationMode.SingleAssessment : AllocationMode.SplitAcrossAll;
+    }
+
     private class AddPaymentModel
     {
         [Required]
@@ -235,7 +254,7 @@
         var addr = a.Address;
         var citystate = string.Join(" ", new[] { a.City, a.State, a.Zip }.Where(s => !string.IsNullOrWhiteSpace(s)));
         if (!string.IsNullOrWhiteSpace(citystate)) addr += ", " + citystate;
-        return $"{addr} — Due: {a.AmountDue:C} Paid: {a.AmountPaid:C} Bal: {(a.Balance):C}";
+        return $"{addr} — Balance: {a.Balance:C}";
     }
 
     private RenderFragment AllocationHelp => builder =>

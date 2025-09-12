@@ -3,42 +3,65 @@
 @inject Radzen.NotificationService Notifications
 @inject OglesbyFDMembers.App.Services.PeopleService PeopleSvc
 
-<div style="padding: 1rem;">
+<div class="rz-py-5">
     <RadzenTemplateForm TItem="AddAddressModel" Data="model" Submit="HandleValidSubmit">
-        <div class="row g-2">
-            <div class="col-12">
-                <RadzenTextBox @bind-Value="model.AddresseeName" Name="AddresseeName" Placeholder="Addressee name (optional)" Style="width:100%" />
-            </div>
-            <div class="col-12">
-                <RadzenTextBox @bind-Value="model.Line1" Name="Line1" Placeholder="Address line 1" Style="width:100%" />
-                <RadzenRequiredValidator Component="Line1" Text="Line 1 is required" />
-            </div>
-            <div class="col-12">
-                <RadzenTextBox @bind-Value="model.Line2" Name="Line2" Placeholder="Address line 2" Style="width:100%" />
-            </div>
-            <div class="col-6">
-                <RadzenTextBox @bind-Value="model.City" Name="City" Placeholder="City" Style="width:100%" />
-            </div>
-            <div class="col-3">
-                <RadzenTextBox @bind-Value="model.State" Name="State" Placeholder="State" Style="width:100%" />
-            </div>
-            <div class="col-3">
-                <RadzenTextBox @bind-Value="model.PostalCode" Name="PostalCode" Placeholder="Postal code" Style="width:100%" />
-            </div>
-            <div class="col-12">
-                <RadzenCheckBox @bind-Value="model.IsValidForMail" TriState="false" />
-                <label style="margin-left: .5rem;">Valid for mail</label>
-            </div>
-            <div class="col-12">
-                <RadzenCheckBox @bind-Value="model.IsPrimary" TriState="false" Disabled="@(!model.IsValidForMail)" />
-                <label style="margin-left: .5rem;">Make primary</label>
-            </div>
-        </div>
+        <RadzenStack Orientation="Orientation.Vertical" JustifyContent="JustifyContent.SpaceBetween">
+            <RadzenStack Gap="1rem">
+                <RadzenFormField Text="Addressee Name" Style="width:100%" AllowFloatingLabel="false">
+                    <ChildContent>
+                        <RadzenTextBox @bind-Value="model.AddresseeName" Name="AddresseeName" Placeholder="Addressee name (optional)" />
+                    </ChildContent>
+                </RadzenFormField>
 
-        <div class="d-flex justify-content-end" style="margin-top: 1rem; gap: .5rem;">
-            <RadzenButton Text="Cancel" ButtonStyle="ButtonStyle.Light" Click="@(() => Dialogs.Close(false))" />
-            <RadzenButton Text="Save" Icon="save" ButtonStyle="ButtonStyle.Primary" Type="ButtonType.Submit" />
-        </div>
+                <RadzenFormField Text="Address Line 1" Style="width:100%" AllowFloatingLabel="false">
+                    <ChildContent>
+                        <RadzenTextBox @bind-Value="model.Line1" Name="Line1" Placeholder="Address line 1" />
+                    </ChildContent>
+                    <Helper>
+                        <RadzenRequiredValidator Component="Line1" Text="Line 1 is required" />
+                    </Helper>
+                </RadzenFormField>
+
+                <RadzenFormField Text="Address Line 2" Style="width:100%" AllowFloatingLabel="false">
+                    <ChildContent>
+                        <RadzenTextBox @bind-Value="model.Line2" Name="Line2" Placeholder="Address line 2" />
+                    </ChildContent>
+                </RadzenFormField>
+
+                <RadzenFormField Text="City" Style="width:100%" AllowFloatingLabel="false">
+                    <ChildContent>
+                        <RadzenTextBox @bind-Value="model.City" Name="City" Placeholder="City" />
+                    </ChildContent>
+                </RadzenFormField>
+
+                <RadzenFormField Text="State" Style="width:100%" AllowFloatingLabel="false">
+                    <ChildContent>
+                        <RadzenTextBox @bind-Value="model.State" Name="State" Placeholder="State" />
+                    </ChildContent>
+                </RadzenFormField>
+
+                <RadzenFormField Text="Postal Code" Style="width:100%" AllowFloatingLabel="false">
+                    <ChildContent>
+                        <RadzenTextBox @bind-Value="model.PostalCode" Name="PostalCode" Placeholder="Postal code" />
+                    </ChildContent>
+                </RadzenFormField>
+
+                <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" Gap="0.5rem" class="rz-pt-3">
+                    <RadzenSwitch @bind-Value="model.IsValidForMail" Name="IsValidForMail" />
+                    <RadzenLabel Text="Valid for mail" Component="True" />
+                </RadzenStack>
+
+                <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" Gap="0.5rem">
+                    <RadzenSwitch @bind-Value="model.IsPrimary" Name="IsPrimary" Disabled="@(!model.IsValidForMail)" />
+                    <RadzenLabel Text="Make primary" Component="True" />
+                </RadzenStack>
+            </RadzenStack>
+
+            <RadzenStack Orientation="Orientation.Horizontal" JustifyContent="JustifyContent.End" Gap="10px" class="rz-mt-4">
+                <RadzenButton Text="Cancel" ButtonStyle="ButtonStyle.Light" Click="@(() => Dialogs.CloseSide(false))" />
+                <RadzenButton Text="Save" Icon="save" ButtonStyle="ButtonStyle.Primary" Type="ButtonType.Submit" />
+            </RadzenStack>
+        </RadzenStack>
     </RadzenTemplateForm>
 </div>
 
@@ -97,7 +120,7 @@
                 Duration = 3000
             });
 
-            Dialogs.Close(true);
+            await Dialogs.CloseSideAsync(true);
         }
         catch (Exception ex)
         {

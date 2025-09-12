@@ -383,19 +383,17 @@ else
 
     private async Task OpenAddAddressSidebar()
     {
-        var result = await Dialogs.OpenAsync<AddMailingAddressSidebar>(
+        var result = await Dialogs.OpenSideAsync<AddMailingAddressSidebar>(
             "Add Mailing Address",
             new Dictionary<string, object?>
             {
                 ["PersonId"] = id
             },
-            new DialogOptions
+            new SideDialogOptions
             {
-                CloseDialogOnOverlayClick = true,
-                ShowClose = true,
-                Resizable = false,
-                Draggable = false,
-                Style = "width: 520px; max-width: 95vw;"
+                CloseDialogOnOverlayClick = false,
+                ShowMask = true,
+                Position = DialogPosition.Right
             });
 
         if (result is bool ok && ok)
@@ -406,19 +404,17 @@ else
 
     private async Task OpenEditPersonDialog()
     {
-        var result = await Dialogs.OpenAsync<OglesbyFDMembers.App.Views.People.EditPersonDialog>(
+        var result = await Dialogs.OpenSideAsync<OglesbyFDMembers.App.Views.People.EditPersonDialog>(
             "Edit Person",
             new Dictionary<string, object?>
             {
                 ["PersonId"] = id
             },
-            new DialogOptions
+            new SideDialogOptions
             {
-                CloseDialogOnOverlayClick = true,
-                ShowClose = true,
-                Resizable = false,
-                Draggable = false,
-                Style = "width: 560px; max-width: 95vw;"
+                CloseDialogOnOverlayClick = false,
+                ShowMask = true,
+                Position = DialogPosition.Right
             });
 
         if (result is bool ok && ok)
@@ -429,19 +425,17 @@ else
 
     private async Task OpenAddPaymentDialog()
     {
-        var result = await Dialogs.OpenAsync<OglesbyFDMembers.App.Views.Payments.AddPaymentDialog>(
+        var result = await Dialogs.OpenSideAsync<OglesbyFDMembers.App.Views.Payments.AddPaymentDialog>(
             "Add Payment",
             new Dictionary<string, object?>
             {
                 ["PersonId"] = id
             },
-            new DialogOptions
+            new SideDialogOptions
             {
-                CloseDialogOnOverlayClick = true,
-                ShowClose = true,
-                Resizable = false,
-                Draggable = false,
-                Style = "width: 520px; max-width: 95vw;"
+                CloseDialogOnOverlayClick = false,
+                ShowMask = true,
+                Position = DialogPosition.Right
             });
 
         if (result is bool ok && ok)
@@ -452,19 +446,17 @@ else
 
     private async Task OpenAddPropertyDialog()
     {
-        var result = await Dialogs.OpenAsync<OglesbyFDMembers.App.Views.People.AddPropertyDialog>(
+        var result = await Dialogs.OpenSideAsync<OglesbyFDMembers.App.Views.People.AddPropertyDialog>(
             "Add Property",
             new Dictionary<string, object?>
             {
                 ["PersonId"] = id
             },
-            new DialogOptions
+            new SideDialogOptions
             {
-                CloseDialogOnOverlayClick = true,
-                ShowClose = true,
-                Resizable = false,
-                Draggable = false,
-                Style = "width: 520px; max-width: 95vw;"
+                CloseDialogOnOverlayClick = false,
+                ShowMask = true,
+                Position = DialogPosition.Right
             });
 
         if (result is bool ok && ok)
