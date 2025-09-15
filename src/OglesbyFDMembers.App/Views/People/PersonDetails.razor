@@ -7,6 +7,7 @@
 @inject DialogService Dialogs
 @inject PeopleSidebarService SidebarSvc
 @inject PaymentsService PaymentSvc
+@inject ContextMenuService ContextMenu
 
 @if (loading)
 {
@@ -116,7 +117,7 @@ else
         </Columns>
     </RadzenDataGrid>
     
-    <RadzenDataGrid Data="details.Addresses" TItem="MailingAddress" AllowPaging PageSize="10" RowHeight="34" EmptyText="No mailing address is on file for this person." Style="width: 100%; margin-bottom: 1rem;">
+    <RadzenDataGrid Data="details.Addresses" TItem="MailingAddress" AllowPaging PageSize="10" RowHeight="34" EmptyText="No mailing address is on file for this person." Style="width: 100%; margin-bottom: 1rem;" CellContextMenu="@OnAddressCellContextMenu">
         <HeaderTemplate>
             <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" JustifyContent="JustifyContent.SpaceBetween" Gap="1rem;" Wrap="FlexWrap.Wrap">
                 <h5 style="margin:0;">Mailing Addresses</h5>
@@ -159,23 +160,9 @@ else
                     }
                 </Template>
             </RadzenDataGridColumn>
-            <RadzenDataGridColumn TItem="MailingAddress" Title="" Width="70px">
-                <Template Context="a">
-                    <RadzenSplitButton Icon="more_vert" ButtonStyle="ButtonStyle.Light" Size="ButtonSize.Small"
-                                       Click="@(args => OnAddressAction(a, args?.Value?.ToString()))">
-                        <ChildContent>
-                            <RadzenSplitButtonItem Text="Make Primary" Value="makePrimary" Icon="star"
-                                                   Disabled="@(a.IsPrimary || !a.IsValidForMail)" />
-                            <RadzenSplitButtonItem Text="Mark Not In Service" Value="markInvalid" Icon="block"
-                                                   Disabled="@(!a.IsValidForMail)" />
-                            <RadzenSplitButtonItem Text="Delete Address" Value="delete" Icon="delete" />
-                        </ChildContent>
-                    </RadzenSplitButton>
-                </Template>
-            </RadzenDataGridColumn>
         </Columns>
     </RadzenDataGrid>
-    
+
     <RadzenDataGrid Data="payments" TItem="PaymentListItem" AllowPaging PageSize="10" RowHeight="34" EmptyText="No recent payments recorded for this person." Style="width: 100%; margin-bottom: 1rem;">
         <HeaderTemplate>
             <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" JustifyContent="JustifyContent.SpaceBetween" Gap="1rem;" Wrap="FlexWrap.Wrap">
@@ -218,6 +205,7 @@ else
     private bool loading = true;
     private OglesbyFDMembers.App.Services.PersonDetails? details;
     private List<PaymentListItem> payments = new();
+    private OglesbyFDMembers.App.Services.MailingAddress? addressContextMenuAddress;
     private bool initialActionHandled = false;
 
     protected override async Task OnParametersSetAsync()
@@ -281,6 +269,63 @@ else
     private async Task LoadPaymentsAsync()
     {
         payments = await PaymentSvc.ListByPersonAsync(id);
+    }
+
+    private void OnAddressCellContextMenu(Radzen.DataGridCellMouseEventArgs<OglesbyFDMembers.App.Services.MailingAddress> args)
+    {
+        if (args.Data == null)
+        {
+            return;
+        }
+
+        addressContextMenuAddress = args.Data;
+
+        var items = new List<ContextMenuItem>
+        {
+            new()
+            {
+                Text = "Make Primary",
+                Value = "makePrimary",
+                Icon = "star",
+                Disabled = args.Data.IsPrimary || !args.Data.IsValidForMail
+            },
+            new()
+            {
+                Text = "Mark Not In Service",
+                Value = "markInvalid",
+                Icon = "block",
+                Disabled = !args.Data.IsValidForMail
+            },
+            new()
+            {
+                Text = "Delete Address",
+                Value = "delete",
+                Icon = "delete"
+            }
+        };
+
+        ContextMenu.Open(args, items, OnAddressMenuItemClick);
+    }
+
+    private void OnAddressMenuItemClick(Radzen.MenuItemEventArgs args)
+    {
+        var action = args.Value?.ToString();
+        var selectedAddress = addressContextMenuAddress;
+        addressContextMenuAddress = null;
+
+        if (selectedAddress == null || string.IsNullOrWhiteSpace(action))
+        {
+            ContextMenu.Close();
+            return;
+        }
+
+        ContextMenu.Close();
+        InvokeAsync(() => OnAddressMenuActionAsync(selectedAddress, action));
+    }
+
+    private async Task OnAddressMenuActionAsync(OglesbyFDMembers.App.Services.MailingAddress address, string action)
+    {
+        await OnAddressAction(address, action);
     }
 
     private async Task OnAddressAction(OglesbyFDMembers.App.Services.MailingAddress a, string? action)
