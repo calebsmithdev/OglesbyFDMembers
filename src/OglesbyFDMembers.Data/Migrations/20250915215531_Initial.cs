@@ -12,6 +12,19 @@ namespace OglesbyFDMembers.Data.Migrations
         protected override void Up(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.CreateTable(
+                name: "AppSettings",
+                columns: table => new
+                {
+                    Key = table.Column<string>(type: "TEXT", maxLength: 200, nullable: false),
+                    Value = table.Column<string>(type: "TEXT", maxLength: 4000, nullable: true),
+                    UpdatedAtUtc = table.Column<DateTime>(type: "TEXT", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_AppSettings", x => x.Key);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "FeeSchedules",
                 columns: table => new
                 {
@@ -35,6 +48,7 @@ namespace OglesbyFDMembers.Data.Migrations
                     LastName = table.Column<string>(type: "TEXT", maxLength: 100, nullable: false),
                     Email = table.Column<string>(type: "TEXT", maxLength: 200, nullable: true),
                     Phone = table.Column<string>(type: "TEXT", maxLength: 32, nullable: true),
+                    Notes = table.Column<string>(type: "TEXT", maxLength: 1000, nullable: true),
                     Active = table.Column<bool>(type: "INTEGER", nullable: false),
                     CreatedUtc = table.Column<DateTime>(type: "TEXT", nullable: false)
                 },
@@ -63,31 +77,6 @@ namespace OglesbyFDMembers.Data.Migrations
                 });
 
             migrationBuilder.CreateTable(
-                name: "Payments",
-                columns: table => new
-                {
-                    Id = table.Column<int>(type: "INTEGER", nullable: false)
-                        .Annotation("Sqlite:Autoincrement", true),
-                    PersonId = table.Column<int>(type: "INTEGER", nullable: false),
-                    PaymentType = table.Column<int>(type: "INTEGER", nullable: false),
-                    Amount = table.Column<decimal>(type: "decimal(10,2)", nullable: false),
-                    PaidUtc = table.Column<DateTime>(type: "TEXT", nullable: false),
-                    CheckNumber = table.Column<string>(type: "TEXT", maxLength: 50, nullable: true),
-                    IsDonation = table.Column<bool>(type: "INTEGER", nullable: false),
-                    Notes = table.Column<string>(type: "TEXT", maxLength: 500, nullable: true)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_Payments", x => x.Id);
-                    table.ForeignKey(
-                        name: "FK_Payments_People_PersonId",
-                        column: x => x.PersonId,
-                        principalTable: "People",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Restrict);
-                });
-
-            migrationBuilder.CreateTable(
                 name: "PersonAddresses",
                 columns: table => new
                 {
@@ -95,6 +84,7 @@ namespace OglesbyFDMembers.Data.Migrations
                         .Annotation("Sqlite:Autoincrement", true),
                     PersonId = table.Column<int>(type: "INTEGER", nullable: false),
                     Line1 = table.Column<string>(type: "TEXT", maxLength: 200, nullable: false),
+                    AddresseeName = table.Column<string>(type: "TEXT", maxLength: 200, nullable: true),
                     Line2 = table.Column<string>(type: "TEXT", maxLength: 200, nullable: true),
                     City = table.Column<string>(type: "TEXT", maxLength: 100, nullable: true),
                     State = table.Column<string>(type: "TEXT", maxLength: 64, nullable: true),
@@ -122,6 +112,7 @@ namespace OglesbyFDMembers.Data.Migrations
                         .Annotation("Sqlite:Autoincrement", true),
                     PersonId = table.Column<int>(type: "INTEGER", nullable: false),
                     Alias = table.Column<string>(type: "TEXT", maxLength: 200, nullable: false),
+                    Type = table.Column<int>(type: "INTEGER", nullable: false),
                     CreatedUtc = table.Column<DateTime>(type: "TEXT", nullable: false)
                 },
                 constraints: table =>
@@ -130,30 +121,6 @@ namespace OglesbyFDMembers.Data.Migrations
                     table.ForeignKey(
                         name: "FK_PersonAliases_People_PersonId",
                         column: x => x.PersonId,
-                        principalTable: "People",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Restrict);
-                });
-
-            migrationBuilder.CreateTable(
-                name: "UtilityNotices",
-                columns: table => new
-                {
-                    Id = table.Column<int>(type: "INTEGER", nullable: false)
-                        .Annotation("Sqlite:Autoincrement", true),
-                    PayerNameRaw = table.Column<string>(type: "TEXT", maxLength: 200, nullable: false),
-                    Amount = table.Column<decimal>(type: "decimal(10,2)", nullable: false),
-                    ImportedUtc = table.Column<DateTime>(type: "TEXT", nullable: false),
-                    MatchedPersonId = table.Column<int>(type: "INTEGER", nullable: true),
-                    IsAllocated = table.Column<bool>(type: "INTEGER", nullable: false),
-                    NeedsReview = table.Column<bool>(type: "INTEGER", nullable: false)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_UtilityNotices", x => x.Id);
-                    table.ForeignKey(
-                        name: "FK_UtilityNotices_People_MatchedPersonId",
-                        column: x => x.MatchedPersonId,
                         principalTable: "People",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Restrict);
@@ -212,6 +179,39 @@ namespace OglesbyFDMembers.Data.Migrations
                 });
 
             migrationBuilder.CreateTable(
+                name: "Payments",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "INTEGER", nullable: false)
+                        .Annotation("Sqlite:Autoincrement", true),
+                    PersonId = table.Column<int>(type: "INTEGER", nullable: false),
+                    PaymentType = table.Column<int>(type: "INTEGER", nullable: false),
+                    Amount = table.Column<decimal>(type: "decimal(10,2)", nullable: false),
+                    PaidUtc = table.Column<DateTime>(type: "TEXT", nullable: false),
+                    CheckNumber = table.Column<string>(type: "TEXT", maxLength: 50, nullable: true),
+                    IsDonation = table.Column<bool>(type: "INTEGER", nullable: false),
+                    Notes = table.Column<string>(type: "TEXT", maxLength: 500, nullable: true),
+                    TargetYear = table.Column<int>(type: "INTEGER", nullable: true),
+                    TargetPropertyId = table.Column<int>(type: "INTEGER", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Payments", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_Payments_People_PersonId",
+                        column: x => x.PersonId,
+                        principalTable: "People",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                    table.ForeignKey(
+                        name: "FK_Payments_Properties_TargetPropertyId",
+                        column: x => x.TargetPropertyId,
+                        principalTable: "Properties",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "PaymentAllocations",
                 columns: table => new
                 {
@@ -234,6 +234,38 @@ namespace OglesbyFDMembers.Data.Migrations
                         name: "FK_PaymentAllocations_Payments_PaymentId",
                         column: x => x.PaymentId,
                         principalTable: "Payments",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "UtilityNotices",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "INTEGER", nullable: false)
+                        .Annotation("Sqlite:Autoincrement", true),
+                    PayerNameRaw = table.Column<string>(type: "TEXT", maxLength: 200, nullable: false),
+                    Amount = table.Column<decimal>(type: "decimal(10,2)", nullable: false),
+                    ImportedUtc = table.Column<DateTime>(type: "TEXT", nullable: false),
+                    MatchedPersonId = table.Column<int>(type: "INTEGER", nullable: true),
+                    OriginalFullName = table.Column<string>(type: "TEXT", maxLength: 200, nullable: true),
+                    PaymentId = table.Column<int>(type: "INTEGER", nullable: true),
+                    IsAllocated = table.Column<bool>(type: "INTEGER", nullable: false),
+                    NeedsReview = table.Column<bool>(type: "INTEGER", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_UtilityNotices", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_UtilityNotices_Payments_PaymentId",
+                        column: x => x.PaymentId,
+                        principalTable: "Payments",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                    table.ForeignKey(
+                        name: "FK_UtilityNotices_People_MatchedPersonId",
+                        column: x => x.MatchedPersonId,
+                        principalTable: "People",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Restrict);
                 });
@@ -276,6 +308,16 @@ namespace OglesbyFDMembers.Data.Migrations
                 column: "PersonId");
 
             migrationBuilder.CreateIndex(
+                name: "IX_Payments_TargetPropertyId",
+                table: "Payments",
+                column: "TargetPropertyId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Payments_TargetYear",
+                table: "Payments",
+                column: "TargetYear");
+
+            migrationBuilder.CreateIndex(
                 name: "IX_PersonAddresses_PersonId_IsPrimary_IsValidForMail",
                 table: "PersonAddresses",
                 columns: new[] { "PersonId", "IsPrimary", "IsValidForMail" });
@@ -289,11 +331,19 @@ namespace OglesbyFDMembers.Data.Migrations
                 name: "IX_UtilityNotices_MatchedPersonId_IsAllocated",
                 table: "UtilityNotices",
                 columns: new[] { "MatchedPersonId", "IsAllocated" });
+
+            migrationBuilder.CreateIndex(
+                name: "IX_UtilityNotices_PaymentId",
+                table: "UtilityNotices",
+                column: "PaymentId");
         }
 
         /// <inheritdoc />
         protected override void Down(MigrationBuilder migrationBuilder)
         {
+            migrationBuilder.DropTable(
+                name: "AppSettings");
+
             migrationBuilder.DropTable(
                 name: "FeeSchedules");
 
@@ -319,10 +369,10 @@ namespace OglesbyFDMembers.Data.Migrations
                 name: "Payments");
 
             migrationBuilder.DropTable(
-                name: "Properties");
+                name: "People");
 
             migrationBuilder.DropTable(
-                name: "People");
+                name: "Properties");
         }
     }
 }

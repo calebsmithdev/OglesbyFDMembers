@@ -11,7 +11,7 @@ using OglesbyFDMembers.Data;
 namespace OglesbyFDMembers.Data.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20250907054405_Initial")]
+    [Migration("20250915215531_Initial")]
     partial class Initial
     {
         /// <inheritdoc />
@@ -19,6 +19,24 @@ namespace OglesbyFDMembers.Data.Migrations
         {
 #pragma warning disable 612, 618
             modelBuilder.HasAnnotation("ProductVersion", "9.0.8");
+
+            modelBuilder.Entity("OglesbyFDMembers.Domain.Entities.AppSetting", b =>
+                {
+                    b.Property<string>("Key")
+                        .HasMaxLength(200)
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime>("UpdatedAtUtc")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Value")
+                        .HasMaxLength(4000)
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Key");
+
+                    b.ToTable("AppSettings", (string)null);
+                });
 
             modelBuilder.Entity("OglesbyFDMembers.Domain.Entities.Assessment", b =>
                 {
@@ -128,11 +146,19 @@ namespace OglesbyFDMembers.Data.Migrations
                     b.Property<int>("PersonId")
                         .HasColumnType("INTEGER");
 
+                    b.Property<int?>("TargetPropertyId")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int?>("TargetYear")
+                        .HasColumnType("INTEGER");
+
                     b.HasKey("Id");
 
                     b.HasIndex("PersonId");
 
                     b.HasIndex("TargetPropertyId");
+
+                    b.HasIndex("TargetYear");
 
                     b.ToTable("Payments", (string)null);
                 });
@@ -187,6 +213,10 @@ namespace OglesbyFDMembers.Data.Migrations
                         .HasMaxLength(100)
                         .HasColumnType("TEXT");
 
+                    b.Property<string>("Notes")
+                        .HasMaxLength(1000)
+                        .HasColumnType("TEXT");
+
                     b.Property<string>("Phone")
                         .HasMaxLength(32)
                         .HasColumnType("TEXT");
@@ -201,6 +231,10 @@ namespace OglesbyFDMembers.Data.Migrations
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("INTEGER");
+
+                    b.Property<string>("AddresseeName")
+                        .HasMaxLength(200)
+                        .HasColumnType("TEXT");
 
                     b.Property<string>("City")
                         .HasMaxLength(100)
@@ -257,6 +291,9 @@ namespace OglesbyFDMembers.Data.Migrations
                         .HasColumnType("TEXT");
 
                     b.Property<int>("PersonId")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("Type")
                         .HasColumnType("INTEGER");
 
                     b.HasKey("Id");
@@ -325,12 +362,21 @@ namespace OglesbyFDMembers.Data.Migrations
                     b.Property<bool>("NeedsReview")
                         .HasColumnType("INTEGER");
 
+                    b.Property<string>("OriginalFullName")
+                        .HasMaxLength(200)
+                        .HasColumnType("TEXT");
+
                     b.Property<string>("PayerNameRaw")
                         .IsRequired()
                         .HasMaxLength(200)
                         .HasColumnType("TEXT");
 
+                    b.Property<int?>("PaymentId")
+                        .HasColumnType("INTEGER");
+
                     b.HasKey("Id");
+
+                    b.HasIndex("PaymentId");
 
                     b.HasIndex("MatchedPersonId", "IsAllocated");
 
@@ -433,7 +479,14 @@ namespace OglesbyFDMembers.Data.Migrations
                         .HasForeignKey("MatchedPersonId")
                         .OnDelete(DeleteBehavior.Restrict);
 
+                    b.HasOne("OglesbyFDMembers.Domain.Entities.Payment", "Payment")
+                        .WithMany()
+                        .HasForeignKey("PaymentId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
                     b.Navigation("MatchedPerson");
+
+                    b.Navigation("Payment");
                 });
 
             modelBuilder.Entity("OglesbyFDMembers.Domain.Entities.Assessment", b =>
