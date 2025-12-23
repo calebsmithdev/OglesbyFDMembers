@@ -2,7 +2,7 @@
 
 A friendly, single‑PC web app for tracking people, properties, annual assessments, and payments for a small fire department. This is intended to be a more accessible way to view relational data without complicated spreadsheets, or maintaining a Microsoft Access database.
 
-This was a fun project for my local volunteer fire department. Ultiamtely, they were not able to use this due to a change of hands with the person who manages this data, but worth keeping around for reference in the future.
+This was a fun project for my local volunteer fire department. Ultimately, they were not able to use this due to a change of hands with the person who manages this data, but worth keeping around for reference in the future.
 
 Be aware this project works, but was not completed and will have bugs/funkiness to it.
 
