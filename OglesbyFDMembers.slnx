@@ -1,0 +1,6 @@
+<Solution>
+  <Project Path="src/OglesbyFDMembers.App/OglesbyFDMembers.App.csproj" />
+  <Project Path="src/OglesbyFDMembers.Data/OglesbyFDMembers.Data.csproj" />
+  <Project Path="src/OglesbyFDMembers.Domain/OglesbyFDMembers.Domain.csproj" />
+  <Project Path="src/OglesbyFDMembers.Tools/OglesbyFDMembers.Tools.csproj" />
+</Solution>

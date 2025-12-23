@@ -2,6 +2,10 @@
 
 A friendly, single‑PC web app for tracking people, properties, annual assessments, and payments for a small fire department. This is intended to be a more accessible way to view relational data without complicated spreadsheets, or maintaining a Microsoft Access database.
 
+This was a fun project for my local volunteer fire department. Ultiamtely, they were not able to use this due to a change of hands with the person who manages this data, but worth keeping around for reference in the future.
+
+Be aware this project works, but was not completed and will have bugs/funkiness to it.
+
 ---
 
 ## Why This Exists
@@ -20,8 +24,8 @@ All with guardrails: unique constraints, no cascade deletes, idempotent jobs, an
 
 ## Tech Stack
 
-- .NET 9 + ASP.NET Core Razor Components (Blazor Server)
-- Entity Framework Core 9 with SQLite
+- .NET 10 + ASP.NET Core Razor Components (Blazor Server)
+- Entity Framework Core 10 with SQLite
 - Radzen.Blazor components for productive UI
 - Mediator (source generator) for clean, decoupled operations
 - UglyToad.PdfPig for parsing utility PDFs
@@ -52,7 +56,7 @@ Solution layout:
 ## Run It Locally
 
 Prerequisites
-- .NET SDK 9.0+
+- .NET SDK 10.0+
 - Windows recommended (default data path is Windows‑style), but works anywhere
 
 Quick start
@@ -127,15 +131,7 @@ Important rules
 
 ## Screenshots
 
-Coming soon.
-
----
-
-## Roadmap Ideas
-
-- Richer reports and PDF/label exports
-- Audit logging for future troubleshooting
-- Polished test suite for allocation edge cases
+![members-listing.png](assets/members-listing.png)
 
 ---
 

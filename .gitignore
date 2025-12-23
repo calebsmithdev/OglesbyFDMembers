@@ -5,6 +5,12 @@ riderModule.iml
 /_ReSharper.Caches/
 .DS_Store
 
+# Copilot files
+copilot.data.migration.agent.xml
+copilot.data.migration.edit.xml
+copilot.data.migration.ask.xml
+copilot.data.migration.ask2agent.xml
+
 # User-specific files
 dev-oglesbyfdmembers.*
 appsettings.Development.json

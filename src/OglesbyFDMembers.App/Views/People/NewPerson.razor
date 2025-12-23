@@ -14,7 +14,7 @@
             All of the important information for a member can be entered below. You will be able to add more properties, mailing addresses, or additional payments later on.
         </p>
         
-        <RadzenTemplateForm TItem="IntakeVm" Data="model" Submit="HandleSubmit">
+        <RadzenTemplateForm TItem="IntakeVm" Data="model" Submit="HandleSubmit" Autocomplete="off">
             <DataAnnotationsValidator/>
             <ValidationSummary/>
 
@@ -22,24 +22,24 @@
                 <RadzenRow Gap="1rem" Wrap="FlexWrap.Wrap">
                     <RadzenColumn Size="12" SizeMD="6">
                         <RadzenFormField Text="First Name" Style="width:100%">
-                            <RadzenTextBox @bind-Value="model.FirstName" Name="FirstName" />
+                            <RadzenTextBox autocomplete="off" @bind-Value="model.FirstName" Name="FirstName" />
                             <RadzenRequiredValidator Component="FirstName" Text="First name is required"/>
                         </RadzenFormField>
                     </RadzenColumn>
                     <RadzenColumn Size="12" SizeMD="6">
                         <RadzenFormField Text="Last Name" Style="width:100%">
-                            <RadzenTextBox @bind-Value="model.LastName" Name="LastName" />
+                            <RadzenTextBox autocomplete="off" @bind-Value="model.LastName" Name="LastName" />
                             <RadzenRequiredValidator Component="LastName" Text="Last name is required"/>
                         </RadzenFormField>
                     </RadzenColumn>
                     <RadzenColumn Size="12" SizeMD="6">
                         <RadzenFormField Text="Phone (optional)" Style="width:100%">
-                            <RadzenMask Mask="(***) ***-****" CharacterPattern="[0-9]" Placeholder="(000) 000-0000" Name="Phone" @bind-Value="model.Phone" aria-label="Phone"/>
+                            <RadzenMask autocomplete="off" Mask="(***) ***-****" CharacterPattern="[0-9]" Placeholder="(000) 000-0000" Name="Phone" @bind-Value="model.Phone" aria-label="Phone"/>
                         </RadzenFormField>
                     </RadzenColumn>
                     <RadzenColumn Size="12" SizeMD="6">
                         <RadzenFormField Text="Email (optional)" Style="width:100%">
-                            <RadzenTextBox @bind-Value="model.Email" Name="Email" />
+                            <RadzenTextBox autocomplete="off" @bind-Value="model.Email" Name="Email" />
                             <RadzenEmailValidator Component="Email" Text="Invalid email format"/>
                         </RadzenFormField>
                     </RadzenColumn>
@@ -50,33 +50,33 @@
                 <RadzenRow Gap="1rem" Wrap="FlexWrap.Wrap">
                     <RadzenColumn Size="12">
                         <RadzenFormField Text="Addressee Name (optional)" Style="width:100%">
-                            <RadzenTextBox @bind-Value="model.AddresseeName" Name="AddresseeName" />
+                            <RadzenTextBox autocomplete="off" @bind-Value="model.AddresseeName" Name="AddresseeName" />
                         </RadzenFormField>
                     </RadzenColumn>
                     <RadzenColumn Size="12">
                         <RadzenFormField Text="Address Line 1" Style="width:100%">
-                            <RadzenTextBox @bind-Value="model.AddressLine1" Name="AddressLine1" />
+                            <RadzenTextBox autocomplete="off" @bind-Value="model.AddressLine1" Name="AddressLine1" />
                             <RadzenRequiredValidator Component="AddressLine1" Text="Address Line 1 is required"/>
                         </RadzenFormField>
                     </RadzenColumn>
                     <RadzenColumn Size="12">
                         <RadzenFormField Text="Address Line 2" Style="width:100%">
-                            <RadzenTextBox @bind-Value="model.AddressLine2" Name="AddressLine2" />
+                            <RadzenTextBox autocomplete="off" @bind-Value="model.AddressLine2" Name="AddressLine2" />
                         </RadzenFormField>
                     </RadzenColumn>
                     <RadzenColumn Size="12" SizeMD="6">
                         <RadzenFormField Text="City" Style="width:100%">
-                            <RadzenTextBox @bind-Value="model.City" Name="City" />
+                            <RadzenTextBox autocomplete="off" @bind-Value="model.City" Name="City" />
                         </RadzenFormField>
                     </RadzenColumn>
                     <RadzenColumn Size="12" SizeMD="2">
                         <RadzenFormField Text="State" Style="width:100%">
-                            <RadzenTextBox @bind-Value="model.State" Name="State" />
+                            <RadzenTextBox autocomplete="off" @bind-Value="model.State" Name="State" Style="width:100%; text-transform: uppercase;" />
                         </RadzenFormField>
                     </RadzenColumn>
                     <RadzenColumn Size="12" SizeMD="4">
                         <RadzenFormField Text="Postal Code" Style="width:100%">
-                            <RadzenTextBox @bind-Value="model.PostalCode" Name="PostalCode" />
+                            <RadzenTextBox autocomplete="off" @bind-Value="model.PostalCode" Name="PostalCode" />
                         </RadzenFormField>
                     </RadzenColumn>
                 </RadzenRow>
@@ -92,27 +92,27 @@
                     <RadzenRow Gap="1rem" Wrap="FlexWrap.Wrap" Style="margin-top: 1rem;">
                         <RadzenColumn Size="12">
                             <RadzenFormField Text="Address Line 1" Style="width:100%">
-                                <RadzenTextBox @bind-Value="model.PropertyAddressLine1" Name="PropertyAddressLine1" />
+                                <RadzenTextBox autocomplete="off" @bind-Value="model.PropertyAddressLine1" Name="PropertyAddressLine1" />
                             </RadzenFormField>
                         </RadzenColumn>
                         <RadzenColumn Size="12">
                             <RadzenFormField Text="Address Line 2" Style="width:100%">
-                                <RadzenTextBox @bind-Value="model.PropertyAddressLine2" Name="PropertyAddressLine2" />
+                                <RadzenTextBox autocomplete="off" @bind-Value="model.PropertyAddressLine2" Name="PropertyAddressLine2" />
                             </RadzenFormField>
                         </RadzenColumn>
                         <RadzenColumn Size="12" SizeMD="6">
                             <RadzenFormField Text="City" Style="width:100%">
-                                <RadzenTextBox @bind-Value="model.PropertyCity" Name="PropertyCity" />
+                                <RadzenTextBox autocomplete="off" @bind-Value="model.PropertyCity" Name="PropertyCity" />
                             </RadzenFormField>
                         </RadzenColumn>
                         <RadzenColumn Size="12" SizeMD="2">
                             <RadzenFormField Text="State" Style="width:100%">
-                                <RadzenTextBox @bind-Value="model.PropertyState" Name="PropertyState" />
+                                <RadzenTextBox autocomplete="off" @bind-Value="model.PropertyState" Name="PropertyState" Style="width:100%; text-transform: uppercase;" />
                             </RadzenFormField>
                         </RadzenColumn>
                         <RadzenColumn Size="12" SizeMD="4">
                             <RadzenFormField Text="Postal Code" Style="width:100%">
-                                <RadzenTextBox @bind-Value="model.PropertyPostalCode" Name="PropertyPostalCode" />
+                                <RadzenTextBox autocomplete="off" @bind-Value="model.PropertyPostalCode" Name="PropertyPostalCode" />
                             </RadzenFormField>
                         </RadzenColumn>
                     </RadzenRow>
@@ -138,19 +138,19 @@
                         </RadzenColumn>
                         <RadzenColumn Size="12" SizeMD="4">
                             <RadzenFormField Text="Amount" Style="width:100%">
-                                <RadzenNumeric @bind-Value="model.PaymentAmount" Name="PaymentAmount"/>
+                                <RadzenNumeric autocomplete="off" @bind-Value="model.PaymentAmount" Name="PaymentAmount"/>
                             </RadzenFormField>
                         </RadzenColumn>
                         <RadzenColumn Size="12" SizeMD="4">
                             <RadzenFormField Text="Paid Date (optional)" Style="width:100%">
-                                <RadzenDatePicker @bind-Value=@model.PaidDate Name="PaidDate" ShowCalendarWeek />
+                                <RadzenDatePicker autocomplete="off" @bind-Value=@model.PaidDate Name="PaidDate" ShowCalendarWeek />
                             </RadzenFormField>
                         </RadzenColumn>
                         @if (model.PaymentType == PaymentType.Check)
                         {
                             <RadzenColumn Size="12" SizeMD="4">
                                 <RadzenFormField Text="Check # (optional)">
-                                    <RadzenTextBox @bind-Value="model.CheckNumber" Name="CheckNumber" Style="width:100%"/>
+                                    <RadzenTextBox autocomplete="off" @bind-Value="model.CheckNumber" Name="CheckNumber" Style="width:100%"/>
                                 </RadzenFormField>
                             </RadzenColumn>
                         }
@@ -293,7 +293,12 @@
         [Required, MaxLength(200)] public string AddressLine1 { get; set; } = string.Empty;
         [MaxLength(200)] public string? AddressLine2 { get; set; }
         [MaxLength(100)] public string? City { get; set; }
-        [MaxLength(64)] public string? State { get; set; }
+        private string? state;
+        [MaxLength(64)] public string? State
+        {
+            get => state;
+            set => state = value?.ToUpperInvariant();
+        }
         [MaxLength(32)] public string? PostalCode { get; set; }
 
         // Property
@@ -301,7 +306,12 @@
         [MaxLength(200)] public string? PropertyAddressLine1 { get; set; }
         [MaxLength(200)] public string? PropertyAddressLine2 { get; set; }
         [MaxLength(100)] public string? PropertyCity { get; set; }
-        [MaxLength(64)] public string? PropertyState { get; set; }
+        private string? propertyState;
+        [MaxLength(64)] public string? PropertyState
+        {
+            get => propertyState;
+            set => propertyState = value?.ToUpperInvariant();
+        }
         [MaxLength(32)] public string? PropertyPostalCode { get; set; }
 
         // Payment
